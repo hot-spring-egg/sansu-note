@@ -1,0 +1,668 @@
+<!-- 
+/**
+ * サンスウノート - サーバーサイド（GAS）
+ * パターンB：DB不要・完全スタンドアロン型
+ */
+
+function onOpen() {
+  const ui = SpreadsheetApp.getUi();
+  ui.createMenu('アプリ管理')
+    .addItem('初期セットアップ', 'setupApp')
+    .addToUi();
+}
+
+function setupApp() {
+  const ui = SpreadsheetApp.getUi();
+  ui.alert('【お知らせ】\nこの「サンスウノート」は、600人同時接続に対応するため、スプレッドシート（DB）を使用しない完全スタンドアロン型として設計されています。\nそのため、シートの初期セットアップは不要です。そのままWebアプリとしてデプロイしてご活用ください。');
+}
+
+function doGet() {
+  return HtmlService.createHtmlOutputFromFile('index')
+    .setTitle('サンスウノート')
+    .setFaviconUrl('https://drive.google.com/thumbnail?sz=w256&id=1xfiZxxMBWfloB3KNScV44n63JABfD0U&.png')
+    .addMetaTag('viewport', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
+}
+-->
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>サンスウノート</title>
+  
+  <link rel="icon" href="https://drive.google.com/thumbnail?sz=w256&id=1xfiZxxMBWfloB3KNScV44n63JABfD0U">
+  <link rel="apple-touch-icon" href="https://drive.google.com/thumbnail?sz=w256&id=1xfiZxxMBWfloB3KNScV44n63JABfD0U">
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            terracotta: '#E07A5F',
+            sage: '#81B29A',
+            bluegrey: '#3D405B',
+            cream: '#F4F1DE',
+            mustard: '#F2CC8F',
+          },
+          fontFamily: {
+            rounded: ['"M PLUS Rounded 1c"', 'sans-serif'],
+            kyokasho: ['"UD Digi Kyokasho N-B"', '"UD デジタル 教科書体 N-B"', '"Klee One"', 'serif'],
+          }
+        }
+      }
+    }
+  </script>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Klee+One:wght@600&family=M+PLUS+Rounded+1c:wght@500;700&display=swap" rel="stylesheet">
+  
+  <style>
+    html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; position: fixed; top: 0; left: 0; touch-action: none; user-select: none; background-color: #F4F1DE; }
+    #root { width: 100%; height: 100%; }
+    .bg-cork { background-color: #d0a57b; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.15'/%3E%3C/svg%3E"); }
+    .bg-paper { background-color: #F4F1DE; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E"); }
+    .bg-math-paper { background-color: #ffffff; background-image: linear-gradient(rgba(129, 178, 154, 0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(129, 178, 154, 0.3) 1px, transparent 1px); background-size: 20px 20px; background-position: center center; }
+    .masking-tape { position: absolute; top: -12px; left: 50%; transform: translateX(-50%) rotate(-2deg); width: 80px; height: 28px; background-color: rgba(129, 178, 154, 0.6); box-shadow: 0 1px 2px rgba(0,0,0,0.1); z-index: 10; border-left: 2px dotted rgba(255,255,255,0.6); border-right: 2px dotted rgba(255,255,255,0.6); }
+    .masking-tape-terracotta { background-color: rgba(224, 122, 95, 0.6); transform: translateX(-50%) rotate(3deg); }
+    .masking-tape-mustard { background-color: rgba(242, 204, 143, 0.6); transform: translateX(-50%) rotate(-1deg); }
+    .pin { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); width: 14px; height: 14px; border-radius: 50%; background: radial-gradient(circle at 30% 30%, #fca5a5, #E07A5F); box-shadow: 2px 3px 4px rgba(0,0,0,0.3), inset -1px -1px 3px rgba(0,0,0,0.2); z-index: 10; }
+    .pin::after { content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 4px; height: 4px; border-radius: 50%; background-color: rgba(255,255,255,0.6); }
+    .pin-blue { background: radial-gradient(circle at 30% 30%, #93c5fd, #3D405B); }
+    .pin-yellow { background: radial-gradient(circle at 30% 30%, #fde047, #F2CC8F); }
+    .pin-green { background: radial-gradient(circle at 30% 30%, #86efac, #81B29A); }
+    @keyframes openNote { 0% { opacity: 0; } 100% { opacity: 1; } }
+    .animate-open-note { animation: openNote 0.3s ease-out forwards; }
+    @keyframes popIn { 0% { transform: scale(0.9); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+    .animate-pop-in { animation: popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+    ::-webkit-scrollbar { display: none; }
+    input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button, input[type=tel]::-webkit-inner-spin-button, input[type=tel]::-webkit-outer-spin-button, input[type=text]::-webkit-inner-spin-button, input[type=text]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useRef } = React;
+
+    // --- ユーティリティ関数 ---
+    const rand = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+    const gcd = (a, b) => b === 0 ? a : gcd(b, a % b);
+
+    const generateUnique = (createFn, maxCount = 10, maxAttempts = 200) => {
+      const qList = [];
+      const seen = new Set();
+      let attempts = 0;
+      while (qList.length < maxCount && attempts < maxAttempts) {
+        const q = createFn();
+        if (!seen.has(q.q)) {
+          seen.add(q.q);
+          qList.push(q);
+        }
+        attempts++;
+      }
+      return qList;
+    };
+
+    const simplifyFraction = (num, den) => {
+      const g = gcd(Math.abs(num), Math.abs(den));
+      const n = num / g;
+      const d = den / g;
+      if (d === 1) return String(n);
+      return `${n}/${d}`;
+    };
+
+    // --- 全学年 問題自動生成ロジック ---
+    const GENERATORS = {
+      1: {
+        "あわせていくつ ふえるといくつ": () => generateUnique(() => { const a = rand(1, 9); const b = rand(1, 10 - a); return { q: `${a} + ${b} =`, a: String(a+b), isHissan: false }; }),
+        "のこりはいくつ ちがいはいくつ": () => generateUnique(() => { const a = rand(2, 10); const b = rand(1, a - 1); return { q: `${a} - ${b} =`, a: String(a-b), isHissan: false }; }),
+        "10よりおおきいかず": () => generateUnique(() => { if (rand(1, 2) === 1) { const b = rand(1, 9); return { q: `10 と ${b} で いくつ？`, a: String(10+b), isHissan: false }; } else { const ans = rand(11, 19); return { q: `${ans} は\n10 と いくつ？`, a: String(ans-10), isHissan: false }; } }),
+        "なんじなんじはん": () => generateUnique(() => { const h = rand(1, 12); const m = rand(0, 1) === 0 ? 0 : 30; return { q: "なんじ なんぷん？", a: `${h}:${m === 0 ? '00' : '30'}`, isClock: true, isHissan: false }; }),
+        "3つのかずのけいさん": () => generateUnique(() => { const type = rand(1, 3); if (type === 1) { const a = rand(1, 5); const b = rand(1, 5); const c = rand(1, 5); return { q: `${a} + ${b} + ${c} =`, a: String(a+b+c), isHissan: false }; } else if (type === 2) { const a = rand(6, 15); const b = rand(1, a-2); const c = rand(1, a-b-1); return { q: `${a} - ${b} - ${c} =`, a: String(a-b-c), isHissan: false }; } else { const a = rand(1, 8); const b = rand(1, 9); const c = rand(1, a+b-1); return { q: `${a} + ${b} - ${c} =`, a: String(a+b-c), isHissan: false }; } }),
+        "くりあがりのあるたしざん": () => generateUnique(() => { const a = rand(2, 9); const b = rand(11 - a, 9); return { q: `${a} + ${b} =`, a: String(a+b), isHissan: false }; }),
+        "くりさがりのあるひきざん": () => generateUnique(() => { const a = rand(11, 18); const b = rand(Math.max(2, a - 9), 9); return { q: `${a} - ${b} =`, a: String(a-b), isHissan: false }; }),
+        "100までのおおきいかず": () => generateUnique(() => { const tens = rand(2, 9); const ones = rand(1, 9); if (rand(1, 2) === 1) { return { q: `10 が ${tens}こ、1 が ${ones}こ\nあわせて いくつ？`, a: String(tens*10+ones), isHissan: false }; } else { return { q: `${tens*10} + ${ones} =`, a: String(tens*10+ones), isHissan: false }; } }),
+        "なんじなんぷん": () => generateUnique(() => { const h = rand(1, 12); const m = rand(0, 11) * 5; return { q: "なんじ なんぷん？", a: `${h}:${m.toString().padStart(2, '0')}`, isClock: true, isHissan: false }; }),
+        "たしざんとひきざん": () => generateUnique(() => { if (rand(1, 2) === 1) { if (rand(0, 1) === 0) { const a = rand(1, 8); const b = rand(1, 9-a); return { q: `${a*10} + ${b*10} =`, a: String((a+b)*10), isHissan: false }; } else { const a = rand(2, 9); const b = rand(1, a-1); return { q: `${a*10} - ${b*10} =`, a: String((a-b)*10), isHissan: false }; } } else { if (rand(0, 1) === 0) { const tens = rand(2, 9); const ones = rand(1, 8); const b = rand(1, 9-ones); return { q: `${tens*10 + ones} + ${b} =`, a: String(tens*10 + ones + b), isHissan: false }; } else { const tens = rand(2, 9); const ones = rand(2, 9); const b = rand(1, ones-1); return { q: `${tens*10 + ones} - ${b} =`, a: String(tens*10 + ones - b), isHissan: false }; } } })
+      },
+      2: {
+        "たし算のひっ算": () => generateUnique(() => { const a = rand(11, 99); const b = rand(11, 99); return { q: `${a} + ${b} =`, a: String(a+b), isHissan: true }; }),
+        "ひき算のひっ算": () => generateUnique(() => { const a = rand(21, 99); const b = rand(11, a - 1); return { q: `${a} - ${b} =`, a: String(a-b), isHissan: true }; }),
+        "長さのたんい": () => generateUnique(() => { if (rand(1, 2) === 1) { const cm = rand(1, 9); return { q: `${cm}cm は 何mm？`, a: String(cm * 10), isHissan: false }; } else { const cm = rand(1, 9); const mm = rand(1, 9); return { q: `${cm}cm ${mm}mm は\n何mm？`, a: String(cm * 10 + mm), isHissan: false }; } }),
+        "3けたの数": () => generateUnique(() => { if (rand(1, 2) === 1) { const h = rand(1, 9); const t = rand(0, 9); const o = rand(1, 9); return { q: `100を ${h}こ、10を ${t}こ、\n1を ${o}こ あつめた 数は？`, a: String(h*100 + t*10 + o), isHissan: false }; } else { const a = rand(1, 9) * 100; const b = rand(1, 9) * 10; return { q: `${a} と ${b} で\nいくつ？`, a: String(a+b), isHissan: false }; } }),
+        "水のかさのたんい": () => generateUnique(() => { const type = rand(1, 3); if (type === 1) { const l = rand(1, 9); return { q: `${l}L は 何dL？`, a: String(l * 10), isHissan: false }; } else if (type === 2) { const l = rand(1, 9); return { q: `${l}L は 何mL？`, a: String(l * 1000), isHissan: false }; } else { const dl = rand(1, 9); return { q: `${dl}dL は 何mL？`, a: String(dl * 100), isHissan: false }; } }),
+        "時こくと時間": () => generateUnique(() => { const h = rand(1, 12); const m = rand(0, 59); return { q: "なんじ なんぷん？", a: `${h}:${m.toString().padStart(2, '0')}`, isClock: true, isHissan: false }; }),
+        "計算のくふう": () => generateUnique(() => { const ones = rand(1, 9); const num1 = rand(1, 4) * 10 + ones; const num2 = rand(1, 4) * 10 + (10 - ones); const num3 = rand(11, 49); const arr = [num1, num2, num3].sort(() => Math.random() - 0.5); return { q: `くふうして けいさんしよう\n${arr[0]} + ${arr[1]} + ${arr[2]} =`, a: String(num1+num2+num3), isHissan: true }; }),
+        "たし算とひき算のひっ算": () => generateUnique(() => { if (rand(0, 1) === 0) { const a = rand(100, 899); const b = rand(10, 99); return { q: `${a} + ${b} =`, a: String(a+b), isHissan: true }; } else { const a = rand(100, 199); const b = rand(10, 99); return { q: `${a} - ${b} =`, a: String(a-b), isHissan: true }; } }),
+        "かけ算(1)": () => generateUnique(() => { const a = rand(2, 5); const b = rand(1, 9); return { q: `${a} × ${b} =`, a: String(a*b), isHissan: false }; }),
+        "かけ算(2)": () => generateUnique(() => { const a = [1, 6, 7, 8, 9][rand(0, 4)]; const b = rand(1, 9); return { q: `${a} × ${b} =`, a: String(a*b), isHissan: false }; }),
+        "4けたの数": () => generateUnique(() => { if (rand(1, 2) === 1) { const th = rand(1, 9); const h = rand(0, 9); const t = rand(0, 9); const o = rand(1, 9); return { q: `1000を ${th}こ、100を ${h}こ、\n10を ${t}こ、1を ${o}こ\nあつめた 数は？`, a: String(th*1000 + h*100 + t*10 + o), isHissan: false }; } else { const a = rand(1, 9) * 1000; const b = rand(1, 9) * 100; return { q: `${a} と ${b} で\nいくつ？`, a: String(a+b), isHissan: false }; } }),
+        "長いものの長さのたんい": () => generateUnique(() => { if (rand(1, 2) === 1) { const m = rand(1, 9); return { q: `${m}m は 何cm？`, a: String(m * 100), isHissan: false }; } else { const m = rand(1, 9); const cm = rand(1, 99); return { q: `${m}m ${cm}cm は\n何cm？`, a: String(m * 100 + cm), isHissan: false }; } }),
+        "たし算とひき算": () => generateUnique(() => { if (rand(1, 2) === 1) { const a = rand(10, 50); const b = rand(10, 50); return { q: `${a} より ${b} おおきい 数は？`, a: String(a+b), isHissan: true }; } else { const a = rand(30, 90); const b = rand(10, a-1); return { q: `${a} より ${b} ちいさい 数は？`, a: String(a-b), isHissan: true }; } }),
+        "分数": () => generateUnique(() => { const den = [2, 3, 4, 8][rand(0, 3)]; return { q: `おなじ おおきさに ${den}つに\nわけたうちの１つを、\n分数で かくと？`, a: `1/${den}`, isHissan: false, isFractionUnit: true }; })
+      },
+      3: {
+        "かけ算": () => generateUnique(() => { const type = rand(1, 3); if (type === 1) { const a = rand(1, 9); return { q: `${a} × 0 =`, a: "0", isHissan: false }; } else if (type === 2) { const a = rand(1, 9); const b = rand(1, 9) * 10; return { q: `${a} × ${b} =`, a: String(a*b), isHissan: false }; } else { const a = rand(1, 9) * 10; const b = rand(1, 9); return { q: `${a} × ${b} =`, a: String(a*b), isHissan: false }; } }),
+        "時こくと時間のもとめ方": () => generateUnique(() => { if (rand(1, 2) === 1) { const h = rand(1, 10); const m = rand(1, 5) * 10; const addM = rand(1, 5) * 10; const totalM = m + addM; const ansH = h + Math.floor(totalM / 60); const ansM = totalM % 60; return { q: `${h}じ ${m}ふん の\n${addM}ぷん ご は？`, a: `${ansH}:${ansM.toString().padStart(2, '0')}`, isHissan: true, timeMode: true }; } else { const h = rand(1, 10); const m = rand(0, 3) * 10; const addM = rand(2, 5) * 10; const totalM = m + addM; const ansH = h + Math.floor(totalM / 60); const ansM = totalM % 60; return { q: `${h}じ ${m}ふん から\n${ansH}じ ${ansM}ふん までの\n時間は 何分？`, a: String(addM), isHissan: true }; } }),
+        "わり算": () => generateUnique(() => { const b = rand(1, 9); const quo = rand(1, 9); const a = b * quo; return { q: `${a} ÷ ${b} =`, a: String(quo), isHissan: false }; }),
+        "たし算とひき算の筆算": () => generateUnique(() => { if (rand(0, 1) === 0) { const a = rand(100, 899); const b = rand(100, 999 - a); return { q: `${a} + ${b} =`, a: String(a+b), isHissan: true }; } else { const a = rand(200, 999); const b = rand(100, a - 1); return { q: `${a} - ${b} =`, a: String(a-b), isHissan: true }; } }),
+        "長いものの長さのはかり方と表し方": () => generateUnique(() => { if (rand(1, 2) === 1) { const km = rand(1, 5); const m = rand(10, 990); return { q: `${km}km ${m}m は\n何m？`, a: String(km*1000 + m), isHissan: true }; } else { const km = rand(1, 5); return { q: `${km}km は 何m？`, a: String(km*1000), isHissan: false }; } }),
+        "ぼうグラフと表": () => generateUnique(() => { const itemsList = [["りんご", "みかん", "ぶどう"], ["いぬ", "ねこ", "とり"], ["国語", "算数", "体育"]]; const items = itemsList[rand(0, 2)]; const values = items.map(() => rand(1, 15)); const targetIdx = rand(0, 2); return { q: `${items[targetIdx]} を えらんだ 人は\n何人 ですか？`, a: String(values[targetIdx]), isHissan: false, isGraph: true, graphData: { title: "しらべた かず", labels: items, values: values, max: 15, step: 5, subStep: 1 } }; }),
+        "あまりのあるわり算": () => generateUnique(() => { const b = rand(2, 9); const quo = rand(1, 9); const r = rand(1, b - 1); const a = b * quo + r; return { q: `${a} ÷ ${b} =`, a: `${quo}...${r}`, isHissan: true, isRemainder: true }; }),
+        "大きい数のしくみ": () => generateUnique(() => { const type = rand(1, 3); if (type === 1) { const m = rand(1, 9); const s = rand(1, 9); return { q: `一万を ${m}こ、千を ${s}こ\nあつめた 数は？`, a: String(m*10000 + s*1000), isHissan: false }; } else if (type === 2) { const a = rand(1, 9) * 1000; return { q: `${a} を 10倍 した\n数は？`, a: String(a*10), isHissan: false }; } else { const a = rand(1, 9) * 10000; return { q: `${a} を 10でわった\n数は？`, a: String(a/10), isHissan: false }; } }),
+        "かけ算の筆算(1)": () => generateUnique(() => { if (rand(1, 2) === 1) { const a = rand(11, 99); const b = rand(2, 9); return { q: `${a} × ${b} =`, a: String(a*b), isHissan: true }; } else { const a = rand(100, 999); const b = rand(2, 9); return { q: `${a} × ${b} =`, a: String(a*b), isHissan: true }; } }),
+        "大きい数のわり算 / 分数とわり算": () => generateUnique(() => { if (rand(0, 1) === 0) { const b = rand(2, 6); return { q: `1m の テープを おなじ ながさに\n${b}つ に 分けた 1つ分は？\n(分数で こたえよう)`, a: `1/${b}`, isHissan: false, isFractionUnit: true }; } else { const b = rand(2, 9); const quo = rand(1, 9) * 10; const a = b * quo; return { q: `${a} ÷ ${b} =`, a: String(quo), isHissan: true }; } }),
+        "小数": () => generateUnique(() => { if (rand(0, 1) === 0) { const a = rand(1, 50); const b = rand(1, 50); return { q: `${a/10} + ${b/10} =`, a: String((a+b)/10), isHissan: true }; } else { const a = rand(11, 99); const b = rand(1, a - 1); return { q: `${a/10} - ${b/10} =`, a: String((a-b)/10), isHissan: true }; } }),
+        "重さのたんいとはかり方": () => generateUnique(() => { const type = rand(1, 3); if (type === 1) { const kg = rand(1, 5); const g = rand(10, 990); return { q: `${kg}kg ${g}g は\n何g？`, a: String(kg*1000 + g), isHissan: true }; } else if (type === 2) { const kg = rand(1, 9); return { q: `${kg}kg は 何g？`, a: String(kg*1000), isHissan: false }; } else { const t = rand(1, 5); return { q: `${t}t は 何kg？`, a: String(t*1000), isHissan: false }; } }),
+        "分数": () => generateUnique(() => { const isAdd = rand(0, 1) === 0; const den = rand(3, 9); if (isAdd) { const a = rand(1, den - 1); const b = rand(1, den - a); return { q: `${a}/${den} + ${b}/${den} =`, a: `${a+b}/${den}`, isHissan: false, isFractionUnit: true }; } else { const a = rand(2, den); const b = rand(1, a - 1); if (a === den && rand(0, 1) === 0) { return { q: `1 - ${b}/${den} =`, a: `${den-b}/${den}`, isHissan: false, isFractionUnit: true }; } else { return { q: `${a}/${den} - ${b}/${den} =`, a: `${a-b}/${den}`, isHissan: false, isFractionUnit: true }; } } }),
+        "□を使った式": () => generateUnique(() => { const a = rand(1, 50); const b = rand(a+1, 99); if (rand(1, 2) === 1) { return { q: `□ + ${a} = ${b}\n□は いくつ？`, a: String(b-a), isHissan: true }; } else { return { q: `${b} - □ = ${a}\n□は いくつ？`, a: String(b-a), isHissan: true }; } }),
+        "かけ算の筆算(2)": () => generateUnique(() => { const a = rand(11, 99); const b = rand(11, 99); return { q: `${a} × ${b} =`, a: String(a*b), isHissan: true }; }),
+        "倍の計算": () => generateUnique(() => { const a = rand(2, 9); const b = rand(2, 9); if (rand(1, 2) === 1) { return { q: `${a} の ${b}倍 は\nいくつ？`, a: String(a*b), isHissan: false }; } else { return { q: `${a*b} は ${a} の\n何倍？`, a: String(b), isHissan: false }; } }),
+        "三角形と角": () => generateUnique(() => { const type = rand(0, 1) === 0 ? 'isosceles' : 'equilateral'; return { q: "この 三角形の なまえ は？\n1: にとうへん三角形\n2: 正三角形", a: type === 'isosceles' ? "1" : "2", isTriangle: true, triangleData: { type: type }, isHissan: false }; })
+      },
+      4: {
+        "大きい数のしくみ": () => generateUnique(() => { const type = rand(1, 3); if (type === 1) { const a = rand(2, 9); return { q: `${a}億 の 10倍 は\n何億？`, a: String(a * 10), isHissan: false }; } else if (type === 2) { const a = rand(2, 9); return { q: `${a}兆 を 10で わった数は\n何千億？`, a: String(a * 10), isHissan: false }; } else { const a = rand(1, 9); const b = rand(1, 9); return { q: `一億を ${a}こ、一万を ${b}こ\nあつめた 数は？`, a: `${a}000${b}0000`, isHissan: false }; } }),
+        "折れ線グラフと表": () => generateUnique(() => { const values = Array.from({length: 5}, () => rand(10, 35)); const months = [4, 5, 6, 7, 8]; const targetIdx = rand(0, 4); return { q: `${months[targetIdx]}月の きおんは\n何度 ですか？`, a: String(values[targetIdx]), isLineGraph: true, graphData: { title: "きおん の しらべ", labels: months.map(m=>m+"月"), values, max: 40, step: 5, subStep: 1 }, isHissan: false }; }),
+        "わり算の筆算(1)": () => generateUnique(() => { const b = rand(2, 9); const quo = rand(11, 49); const r = rand(1, b - 1); const a = b * quo + r; return { q: `${a} ÷ ${b} =`, a: `${quo}...${r}`, isHissan: true, isRemainder: true }; }),
+        "角の大きさ": () => generateUnique(() => { const angles = [30, 45, 60, 90, 120, 135, 150]; const a = angles[rand(0, angles.length-1)]; return { q: "分度器を使いましょう。\nこの 角の 大きさは\n何度 ですか？", a: String(a), isAngle: true, angleData: { angle: a }, isHissan: false }; }),
+        "小数のしくみ": () => generateUnique(() => { const type = rand(1, 3); if (type === 1) { const a = rand(11, 99); return { q: `0.01 を ${a}こ\nあつめた 数は？`, a: String(a / 100), isHissan: false }; } else if (type === 2) { const a = rand(1, 9); const b = rand(1, 9); return { q: `${a/10} + ${b/100} =`, a: String((a*10+b)/100), isHissan: true }; } else { const a = rand(11, 99); return { q: `${a/100} は 0.01 を\n何こ あつめた数？`, a: String(a), isHissan: false }; } }),
+        "わり算の筆算(2)": () => generateUnique(() => { const b = rand(11, 49); const quo = rand(2, 9); const r = rand(1, b - 1); const a = b * quo + r; return { q: `${a} ÷ ${b} =`, a: `${quo}...${r}`, isHissan: true, isRemainder: true }; }),
+        "がい数の表し方と使い方": () => generateUnique(() => { const a = rand(1111, 9999); const ans = Math.round(a / 100) * 100; return { q: `${a} を 四捨五入して\n百の位までの\nがい数に しよう`, a: String(ans), isHissan: true }; }),
+        "計算のきまり": () => generateUnique(() => { if (rand(1, 2) === 1) { const a = rand(2, 9); const b = rand(2, 9); const c = rand(2, 9); return { q: `${a*10} - ${b} × ${c} =`, a: String(a*10 - b*c), isHissan: true }; } else { const a = rand(2, 9); const b = rand(2, 5); const c = rand(2, 5); return { q: `${a} × ${b} + ${a} × ${c} =`, a: String(a*(b+c)), isHissan: true }; } }),
+        "分数": () => generateUnique(() => { const den = rand(4, 9); if (rand(0, 1) === 0) { const a = rand(1, den-1); const b = rand(1, den-a); return { q: `${a}/${den} + ${b}/${den} =`, a: (a+b === den) ? "1" : `${a+b}/${den}`, isHissan: false, isFractionUnit: true }; } else { const a = rand(2, den-1); const b = rand(1, a-1); return { q: `${a}/${den} - ${b}/${den} =`, a: `${a-b}/${den}`, isHissan: false, isFractionUnit: true }; } }),
+        "面積のくらべ方と表し方": () => generateUnique(() => { const w = rand(2, 9); const h = rand(2, 9); return { q: "この 四角形の 面積は\n何cm²？", a: String(w * h), isArea: true, areaData: { w, h }, isHissan: true }; }),
+        "小数のかけ算とわり算": () => generateUnique(() => { if (rand(0, 1) === 0) { const a = rand(11, 49); const b = rand(2, 9); return { q: `${a/10} × ${b} =`, a: String((a*b)/10), isHissan: true }; } else { const b = rand(2, 9); const quo = rand(11, 49); const a = b * quo; return { q: `${a/10} ÷ ${b} =`, a: String(quo/10), isHissan: true }; } }),
+        "直方体と立方体": () => generateUnique(() => { const type = rand(1, 3); const solidType = rand(0, 1) === 0 ? 'cube' : 'cuboid'; const shapeName = solidType === 'cube' ? '立方体' : '直方体'; if (type === 1) { return { q: `この ${shapeName}の\n面の 数は いくつ？`, a: "6", isSolid: true, solidData: { type: solidType }, isHissan: false }; } else if (type === 2) { return { q: `この ${shapeName}の\n辺の 数は いくつ？`, a: "12", isSolid: true, solidData: { type: solidType }, isHissan: false }; } else { return { q: `この ${shapeName}の 頂点の\n数は いくつ？`, a: "8", isSolid: true, solidData: { type: solidType }, isHissan: false }; } })
+      },
+      5: {
+        "整数と小数": () => generateUnique(() => { const type = rand(1, 2); if (type === 1) { const a = rand(11, 999) / 100; const m = rand(1, 2) === 1 ? 10 : 100; return { q: `${a} を ${m}倍した\n数は いくつですか？`, a: String(Math.round(a * m * 100)/100), isHissan: false }; } else { const a = rand(11, 999) / 10; const m = rand(1, 2) === 1 ? 10 : 100; return { q: `${a} を 1/${m} にした\n数は いくつですか？`, a: String(Math.round(a / m * 1000)/1000), isHissan: false }; } }),
+        "直方体や立方体の体積": () => generateUnique(() => { if (rand(1, 2) === 1) { const a = rand(2, 9); return { q: `1辺が ${a}cm の 立方体の\n体積は 何cm³ ですか？`, a: String(a*a*a), isHissan: true, isSolid: true, solidData: { type: 'cube'} }; } else { const w = rand(2, 9); const d = rand(2, 9); const h = rand(2, 9); return { q: `たて ${d}cm、横 ${w}cm、\n高さ ${h}cm の 直方体の\n体積は 何cm³ ですか？`, a: String(w*d*h), isHissan: true, isSolid: true, solidData: { type: 'cuboid'} }; } }),
+        "比例": () => generateUnique(() => { const x1 = rand(2, 5); const y1 = rand(2, 10) * 10; const x2 = rand(6, 12); const unitPrice = y1 / x1; return { q: `${x1}m で ${y1}円 の リボンが あります。\nこの リボン ${x2}m の \nねだんは 何円 ですか？`, a: String(unitPrice * x2), isHissan: true }; }),
+        "小数のかけ算": () => generateUnique(() => { const a = rand(11, 99); const b = rand(11, 99); return { q: `${a/10} × ${b/10} =`, a: String((a*b)/100), isHissan: true }; }),
+        "小数のわり算": () => generateUnique(() => { const b = rand(2, 9); const quo = rand(11, 99); const a = b * quo; return { q: `${a/10} ÷ ${b/10} =`, a: String(quo), isHissan: true }; }),
+        "図形の角": () => generateUnique(() => { const type = rand(1, 3); if (type === 1) { const a = rand(30, 80); const b = rand(30, 80); return { q: `三角形の 2つの角が\n${a}度 と ${b}度 です。\nもう 1つの 角は 何度ですか？`, a: String(180-a-b), isHissan: true }; } else if (type === 2) { return { q: `四角形の 4つの 角の 大きさの 和は\n何度 ですか？`, a: "360", isHissan: false }; } else { return { q: `五角形の 5つの 角の 大きさの 和は\n何度 ですか？`, a: "540", isHissan: false }; } }),
+        "偶数と奇数 倍数と約数": () => generateUnique(() => { const type = rand(1, 4); if (type === 1) { const a = rand(2, 6); const b = rand(a+1, 9); const lcm = (a*b)/gcd(a,b); return { q: `${a} と ${b} の\n最小公倍数は いくつですか？`, a: String(lcm), isHissan: false }; } else if (type === 2) { const a = rand(2, 5) * rand(2, 4); const b = rand(2, 5) * rand(2, 4); return { q: `${a} と ${b} の\n最大公約数は いくつですか？`, a: String(gcd(a,b)), isHissan: false }; } else if (type === 3) { const a = rand(10, 99); return { q: `${a} は 偶数ですか、\n奇数ですか？\n1: 偶数\n2: 奇数`, a: a % 2 === 0 ? "1" : "2", isHissan: false }; } else { const a = [12, 16, 18, 20, 24][rand(0, 4)]; let count = 0; for(let i=1; i<=a; i++) { if(a%i===0) count++; } return { q: `${a} の 約数は\n全部で 何こ ありますか？`, a: String(count), isHissan: false }; } }),
+        "分数と小数 整数の関係": () => generateUnique(() => { if (rand(1, 2) === 1) { const a = rand(1, 9); const b = [2, 4, 5, 8][rand(0, 3)]; return { q: `${a}/${b} を 小数で 表すと\nいくつですか？`, a: String(a/b), isHissan: true, isFractionUnit: true }; } else { const a = rand(1, 9); const b = rand(2, 9); return { q: `${a} ÷ ${b} を 分数で 表すと？`, a: `${a}/${b}`, isHissan: false, isFractionUnit: true }; } }),
+        "分数のたし算とひき算": () => generateUnique(() => { const dens = [ [2,3,6], [2,4,4], [3,4,12], [2,5,10], [3,5,15] ]; const [d1, d2, lcm] = dens[rand(0, dens.length-1)]; const isAdd = rand(0, 1) === 0; let n1 = rand(1, d1-1), n2 = rand(1, d2-1); if (!isAdd && n1*lcm/d1 <= n2*lcm/d2) { n1 = d1 - 1; n2 = 1; } const numAns = isAdd ? n1*(lcm/d1) + n2*(lcm/d2) : n1*(lcm/d1) - n2*(lcm/d2); return { q: `${n1}/${d1} ${isAdd?'+':'-'} ${n2}/${d2} =`, a: simplifyFraction(numAns, lcm), isHissan: true, isFractionUnit: true }; }),
+        "平均": () => generateUnique(() => { const a = rand(10, 50); const b = rand(10, 50); const c = rand(10, 50); const sum = a + b + c; if (sum % 3 === 0) { return { q: `${a}、${b}、${c} の\n平均は いくつですか？`, a: String(sum / 3), isHissan: true }; } else { const d = sum + (3 - sum%3); const newC = d - a - b; return { q: `${a}、${b}、${newC} の\n平均は いくつですか？`, a: String(d / 3), isHissan: true }; } }),
+        "単位量あたりの大きさ": () => generateUnique(() => { if (rand(1, 2) === 1) { const area = rand(2, 9) * 10; const people = area * rand(2, 5); return { q: `${area}m² の へやに ${people}人 います。\n1m² あたり 何人 ですか？`, a: String(people/area), isHissan: true }; } else { const L = rand(2, 9) * 10; const km = L * rand(10, 20); return { q: `${L}L の ガソリンで ${km}km 走る 車が あります。\n1L で 何km 走りますか？`, a: String(km/L), isHissan: true }; } }),
+        "四角形と三角形の面積": () => generateUnique(() => { const type = rand(1, 3); if (type === 1) { const base = rand(2, 10); const h = rand(2, 10); return { q: `底辺が ${base}cm、高さが ${h}cm の\n三角形の 面積は 何cm²？`, a: String((base * h) / 2), isHissan: true }; } else if (type === 2) { const base = rand(2, 10); const h = rand(2, 10); return { q: `底辺が ${base}cm、高さが ${h}cm の\n平行四辺形の 面積は 何cm²？`, a: String(base * h), isHissan: true }; } else { const a = rand(2, 8); const b = rand(2, 8); const h = rand(2, 10); return { q: `上底が ${a}cm、下底が ${b}cm、\n高さが ${h}cm の\n台形の 面積は 何cm²？`, a: String((a + b) * h / 2), isHissan: true }; } }),
+        "割合": () => generateUnique(() => { const type = rand(1, 3); if (type === 1) { const base = rand(2, 10) * 10; const comp = base * rand(1, 9) / 10; return { q: `${base}人 を もとにしたときの\n${comp}人 の 割合は いくつですか？\n(小数でこたえよう)`, a: String(comp/base), isHissan: true }; } else if (type === 2) { const base = rand(2, 10) * 10; const comp = base * rand(1, 9) / 10; return { q: `${base}人 を 100% としたとき、\n${comp}人 は 何% ですか？`, a: String((comp/base)*100), isHissan: true }; } else { const base = rand(1, 5) * 1000; const per = rand(1, 9) * 10; return { q: `${base}円 の ${per}% は\n何円 ですか？`, a: String(base * (per/100)), isHissan: true }; } }),
+        "帯グラフと円グラフ": () => generateUnique(() => { const vals = [rand(30, 50), rand(20, 30), rand(10, 20)]; const total = vals[0] + vals[1] + vals[2]; const remainder = 100 - total; vals.push(remainder); const labels = ["犬", "猫", "鳥", "その他"]; const targetIdx = rand(0, 3); const type = rand(0, 1) === 0 ? "帯グラフ" : "円グラフ"; const isPie = type === "円グラフ"; return { q: `${type}を 見て こたえよう。\n「${labels[targetIdx]}」の 割合は 何% ですか？`, a: String(vals[targetIdx]), isHissan: false, isPieGraph: isPie, isBandGraph: !isPie, graphData: { labels, values: vals } }; }),
+        "正多角形と円周の長さ": () => generateUnique(() => { if (rand(1, 2) === 1) { const d = rand(2, 10); return { q: `直径が ${d}cm の 円の\n円周の 長さは 何cm ですか？\n(円周率は 3.14)`, a: String(Math.round(d * 3.14 * 100)/100), isHissan: true }; } else { const r = rand(2, 5); return { q: `半径が ${r}cm の 円の\n円周の 長さは 何cm ですか？\n(円周率は 3.14)`, a: String(Math.round(r * 2 * 3.14 * 100)/100), isHissan: true }; } }),
+        "角柱と円柱": () => generateUnique(() => { const type = rand(1, 3); if (type === 1) { const n = rand(3, 6); const shapes = ["", "", "", "三角形", "四角形", "五角形", "六角形"]; const names = ["", "", "", "三角柱", "四角柱", "五角柱", "六角柱"]; return { q: `底面が ${shapes[n]} の\n角柱の なまえは？\n1: ${names[n]}\n2: 円柱`, a: "1", isHissan: false }; } else if (type === 2) { const n = rand(3, 5); return { q: `${n === 3 ? "三角柱" : n === 4 ? "四角柱" : "五角柱"}の 側面の 数は\nいくつ ですか？`, a: String(n), isHissan: false }; } else { return { q: `底面が 円 の\n柱の なまえは？\n1: 円柱\n2: 球`, a: "1", isHissan: false }; } })
+      },
+      6: {
+        "対称な図形": () => generateUnique(() => {
+          const type = rand(1, 3);
+          if (type === 1) { return { q: "この図形は 線対称です。\n対応する点を結ぶ直線と対称の軸は、\nどのように 交わりますか。\n1: 垂直に交わる\n2: 平行になる", a: "1", isSymmetry: true, symmetryData: { type: 'line' }, isHissan: false }; } 
+          else if (type === 2) { return { q: "この図形は 点対称です。\n対応する点を結ぶ直線は、必ず\n図形の どこを 通りますか。\n1: 対称の軸\n2: 対称の中心", a: "2", isSymmetry: true, symmetryData: { type: 'point' }, isHissan: false }; } 
+          else { const n = rand(3, 6); const names = ["", "", "", "正三角形", "正方形", "正五角形", "正六角形"]; return { q: `${names[n]} の\n対称の軸は 何本 ありますか。`, a: String(n), isSymmetry: true, symmetryData: { type: 'polygon', sides: n }, isHissan: false }; }
+        }),
+        "文字と式": () => generateUnique(() => {
+          const a = rand(2, 9), x = rand(2, 9);
+          return { q: `x × ${a} = y という 式があります。\nx が ${x} のとき、y はいくつですか。`, a: String(x * a), isHissan: false };
+        }),
+        "分数×整数、分数÷整数、分数×分数": () => generateUnique(() => {
+          const type = rand(1, 3);
+          if (type === 1) { const den = rand(3, 9); const num = rand(1, den - 1); const int = rand(2, 5); return { q: `${num}/${den} × ${int} =`, a: simplifyFraction(num * int, den), isHissan: false, isFractionUnit: true }; } 
+          else if (type === 2) { const den = rand(2, 5); const num = rand(1, den - 1); const int = rand(2, 5); return { q: `${num}/${den} ÷ ${int} =`, a: simplifyFraction(num, den * int), isHissan: false, isFractionUnit: true }; } 
+          else { const d1 = rand(2, 5); const n1 = rand(1, d1 - 1); const d2 = rand(2, 5); const n2 = rand(1, d2 - 1); return { q: `${n1}/${d1} × ${n2}/${d2} =`, a: simplifyFraction(n1 * n2, d1 * d2), isHissan: false, isFractionUnit: true }; }
+        }),
+        "分数÷分数": () => generateUnique(() => {
+          const d1 = rand(2, 4), n1 = rand(1, d1-1), d2 = rand(2, 4), n2 = rand(1, d2-1);
+          return { q: `${n1}/${d1} ÷ ${n2}/${d2} =`, a: simplifyFraction(n1 * d2, d1 * n2), isHissan: false, isFractionUnit: true };
+        }),
+        "比": () => generateUnique(() => {
+          const type = rand(1, 3);
+          if (type === 1) { const a = rand(2, 5); const b = rand(2, 5); const m = rand(2, 4); if (a === b) return { q: `2 : 3 = 4 : x\nx は いくつですか。`, a: "6", isHissan: false, isFractionUnit: true }; return { q: `${a} : ${b} = ${a * m} : x\nx は いくつですか。`, a: String(b * m), isHissan: false, isFractionUnit: true }; } 
+          else if (type === 2) { const a = rand(2, 6); const b = rand(2, 6); if (a === b) return { q: `2 : 3 の 比の値を\n分数で こたえましょう。`, a: "2/3", isHissan: false, isFractionUnit: true }; return { q: `${a} : ${b} の 比の値を\n分数で こたえましょう。`, a: simplifyFraction(a, b), isHissan: false, isFractionUnit: true }; } 
+          else { const a = rand(2, 5); const b = rand(2, 5); const m = rand(2, 4); if (a === b) return { q: `4 : 6 を 一番 かんたんな\n整数の比にすると 2 : x です。\nx は？`, a: "3", isHissan: false, isFractionUnit: true }; return { q: `${a * m} : ${b * m} を 一番 かんたんな\n整数の比にすると ${a} : x です。\nx は？`, a: String(b), isHissan: false, isFractionUnit: true }; }
+        }),
+        "拡大図と縮図": () => generateUnique(() => {
+          const scale = rand(1, 2) * 100; const realM = (scale / 100) * rand(2, 5);
+          return { q: `実際の長さが ${realM}m のものを、\n縮尺 1/${scale} の 縮図に 描くと、\n長さは 何cm になりますか。`, a: String((realM * 100) / scale), isHissan: true };
+        }),
+        "円の面積": () => generateUnique(() => {
+          const r = rand(2, 5);
+          return { q: `半径 ${r}cm の 円の 面積は\n何cm² ですか。(円周率 3.14)`, a: String(Math.round(r * r * 3.14 * 100) / 100), isHissan: true };
+        }),
+        "角柱と円柱の体積": () => generateUnique(() => {
+          const s = rand(10, 30), h = rand(5, 10);
+          return { q: `底面積が ${s}cm²、高さが ${h}cm の\n角柱の 体積は 何cm³ ですか。`, a: String(s * h), isHissan: true };
+        }),
+        "およその面積と体積": () => generateUnique(() => {
+          const w = rand(5, 10)*10, h = rand(5, 10)*10;
+          return { q: `だいたい 縦${h}m、横${w}m の\n長方形と みなすと、\nおよその 面積は 何m² ですか。`, a: String(w * h), isHissan: true };
+        }),
+        "比例と反比例": () => generateUnique(() => {
+          const a = rand(2, 5), x1 = rand(2, 3), y1 = a * x1, x2 = rand(4, 6);
+          return { q: `y は x に 比例しています。\nx が ${x1} のとき y は ${y1} です。\nx が ${x2} のとき、y はいくつですか。`, a: String(a * x2), isHissan: true };
+        }),
+        "並べ方と組み合わせ方": () => generateUnique(() => {
+          const n = rand(3, 4); let ans = 1; for(let i=1; i<=n; i++) ans *= i;
+          return { q: `${n}人が 1列に 並ぶ 並べ方は、\n全部で 何通り ありますか。`, a: String(ans), isHissan: false };
+        })
+      }
+    };
+
+
+    // --- SVG 描画コンポーネント ---
+    const SymmetryFigure = ({ data }) => {
+      if (!data) return null;
+      if (data.type === 'line') return <svg viewBox="0 0 100 100" className="w-auto h-28 sm:h-36 mb-2 drop-shadow-md shrink-0 bg-white rounded-md border border-gray-200"><polygon points="50,15 85,50 50,85 15,50" fill="rgba(129, 178, 154, 0.2)" stroke="#3D405B" strokeWidth="2" strokeLinejoin="round" /><line x1="50" y1="10" x2="50" y2="90" stroke="#ef4444" strokeWidth="2" strokeDasharray="4,4" /><circle cx="25" cy="50" r="3" fill="#E07A5F" /><circle cx="75" cy="50" r="3" fill="#E07A5F" /></svg>;
+      if (data.type === 'point') return <svg viewBox="0 0 100 100" className="w-auto h-28 sm:h-36 mb-2 drop-shadow-md shrink-0 bg-white rounded-md border border-gray-200"><polygon points="30,20 90,20 70,80 10,80" fill="rgba(129, 178, 154, 0.2)" stroke="#3D405B" strokeWidth="2" strokeLinejoin="round" /><circle cx="50" cy="50" r="3.5" fill="#ef4444" /></svg>;
+      if (data.type === 'polygon') {
+        const pts = [];
+        for (let i = 0; i < data.sides; i++) { const angle = (i * 2 * Math.PI) / data.sides - Math.PI / 2; pts.push(`${50 + 35 * Math.cos(angle)},${50 + 35 * Math.sin(angle)}`); }
+        return <svg viewBox="0 0 100 100" className="w-auto h-28 sm:h-36 mb-2 drop-shadow-md shrink-0 bg-white rounded-md border border-gray-200"><polygon points={pts.join(' ')} fill="rgba(242, 204, 143, 0.2)" stroke="#3D405B" strokeWidth="2" strokeLinejoin="round" /></svg>;
+      }
+      return null;
+    };
+
+    const PieGraph = ({ data }) => {
+      if (!data) return null;
+      let currentAngle = -Math.PI / 2;
+      const paths = data.values.map((val, idx) => {
+        const angle = (val / 100) * 2 * Math.PI, nextAngle = currentAngle + angle;
+        const d = `M 50 50 L ${50+45*Math.cos(currentAngle)} ${50+45*Math.sin(currentAngle)} A 45 45 0 ${angle > Math.PI ? 1 : 0} 1 ${50+45*Math.cos(nextAngle)} ${50+45*Math.sin(nextAngle)} Z`;
+        const labelAngle = currentAngle + angle / 2;
+        currentAngle = nextAngle;
+        return <g key={idx}><path d={d} fill={["#E07A5F", "#F2CC8F", "#81B29A", "#3D405B", "#e2e8f0"][idx % 5]} stroke="#fff" strokeWidth="1" /><text x={50+27*Math.cos(labelAngle)} y={50+27*Math.sin(labelAngle)} fontSize="7" textAnchor="middle" dominantBaseline="central" fill={idx===3?"#fff":"#3D405B"} fontWeight="bold">{data.labels[idx]}</text></g>;
+      });
+      return <svg viewBox="0 0 100 100" className="w-auto h-32 sm:h-40 mb-2 drop-shadow-md shrink-0 bg-white rounded-md border border-gray-200">{paths}</svg>;
+    };
+
+    const BandGraph = ({ data }) => {
+      if (!data) return null;
+      let currentX = 0;
+      const rects = data.values.map((val, idx) => {
+        const width = (val / 100) * 300, x = currentX; currentX += width;
+        return <g key={idx}><rect x={x} y="30" width={width} height="40" fill={["#E07A5F", "#F2CC8F", "#81B29A", "#3D405B", "#e2e8f0"][idx % 5]} stroke="#fff" strokeWidth="1" />{width > 30 && <text x={x + width/2} y="50" fontSize="12" textAnchor="middle" dominantBaseline="central" fill={idx===3?"#fff":"#3D405B"} fontWeight="bold">{data.labels[idx]}</text>}</g>;
+      });
+      return <svg viewBox="0 0 300 100" className="w-full max-w-[400px] h-auto max-h-[100px] sm:max-h-[120px] mb-2 drop-shadow-sm shrink-0 bg-white rounded-md border border-gray-200">{rects}<text x="0" y="85" fontSize="12" fill="#3D405B" fontWeight="bold">0%</text><text x="300" y="85" fontSize="12" textAnchor="end" fill="#3D405B" fontWeight="bold">100%</text>{[25, 50, 75].map(t => <g key={t}><line x1={(t/100)*300} y1="25" x2={(t/100)*300} y2="75" stroke="#3D405B" strokeWidth="1" strokeDasharray="2,2"/><text x={(t/100)*300} y="85" fontSize="12" textAnchor="middle" fill="#3D405B" fontWeight="bold">{t}</text></g>)}</svg>;
+    };
+
+    const BarGraph = ({ data }) => {
+      if (!data) return null;
+      const yTicks = [], barW = (335 / data.labels.length) * 0.5;
+      if (data.subStep) for (let i = 0; i <= data.max; i += data.subStep) if (i % data.step !== 0) yTicks.push(<line key={`suby${i}`} x1="45" y1={35+230-(i/data.max)*230} x2="380" y2={35+230-(i/data.max)*230} stroke="#e2e8f0" strokeWidth="1" />);
+      for (let i=0; i<=data.max; i+=data.step) yTicks.push(<g key={`y${i}`}><line x1="45" y1={35+230-(i/data.max)*230} x2="380" y2={35+230-(i/data.max)*230} stroke="#94a3b8" strokeWidth="1.5" /><text x="37" y={35+230-(i/data.max)*230+4} fontSize="14" textAnchor="end" fill="#3D405B">{i}</text></g>);
+      const bars = data.labels.map((lbl, idx) => <g key={`bar${idx}`}><rect x={45+(335/data.labels.length)*idx+(335/data.labels.length-barW)/2} y={35+230-(data.values[idx]/data.max)*230} width={barW} height={(data.values[idx]/data.max)*230} fill="#81B29A" rx="2" /><text x={45+(335/data.labels.length)*idx+(335/data.labels.length)/2} y="283" fontSize="14" textAnchor="middle" fill="#3D405B" fontWeight="bold">{lbl}</text></g>);
+      return <svg viewBox="0 0 400 300" className="w-full max-w-[400px] h-auto max-h-[150px] sm:max-h-[200px] mb-2 drop-shadow-sm shrink-0 bg-white rounded-md border border-gray-200"><text x="200" y="20" fontSize="16" textAnchor="middle" fill="#3D405B" fontWeight="bold">{data.title}</text>{yTicks}{bars}<line x1="45" y1="35" x2="45" y2="265" stroke="#3D405B" strokeWidth="2"/><line x1="45" y1="265" x2="380" y2="265" stroke="#3D405B" strokeWidth="2"/></svg>;
+    };
+
+    const LineGraph = ({ data }) => {
+      if (!data) return null;
+      const yTicks = [], pts = data.labels.map((lbl, idx) => ({ x: 45 + (335 / (data.labels.length - 1)) * idx, y: 35 + 230 - (data.values[idx] / data.max) * 230, lbl }));
+      if (data.subStep) for (let i = 0; i <= data.max; i += data.subStep) if (i % data.step !== 0) yTicks.push(<line key={`suby${i}`} x1="45" y1={35+230-(i/data.max)*230} x2="380" y2={35+230-(i/data.max)*230} stroke="#e2e8f0" strokeWidth="1" />);
+      for (let i=0; i<=data.max; i+=data.step) yTicks.push(<g key={`y${i}`}><line x1="45" y1={35+230-(i/data.max)*230} x2="380" y2={35+230-(i/data.max)*230} stroke="#94a3b8" strokeWidth="1.5" /><text x="37" y={35+230-(i/data.max)*230+4} fontSize="14" textAnchor="end" fill="#3D405B">{i}</text></g>);
+      return <svg viewBox="0 0 400 300" className="w-full max-w-[400px] h-auto max-h-[150px] sm:max-h-[200px] mb-2 drop-shadow-sm shrink-0 bg-white rounded-md border border-gray-200"><text x="200" y="20" fontSize="16" textAnchor="middle" fill="#3D405B" fontWeight="bold">{data.title}</text>{yTicks}<polyline points={pts.map(p=>`${p.x},${p.y}`).join(' ')} fill="none" stroke="#E07A5F" strokeWidth="2.5" />{pts.map((p, i) => <g key={i}><circle cx={p.x} cy={p.y} r="4" fill="#E07A5F" /><text x={p.x} y="283" fontSize="14" textAnchor="middle" fill="#3D405B" fontWeight="bold">{p.lbl}</text></g>)}<line x1="45" y1="35" x2="45" y2="265" stroke="#3D405B" strokeWidth="2"/><line x1="45" y1="265" x2="380" y2="265" stroke="#3D405B" strokeWidth="2"/></svg>;
+    };
+
+    const TriangleFigure = ({ data }) => {
+      if (!data) return null;
+      let pts = data.type === 'equilateral' ? "50,15 85,75 15,75" : "50,10 75,85 25,85"; 
+      return <svg viewBox="0 0 100 100" className="w-auto h-24 sm:h-32 mb-2 drop-shadow-md shrink-0 bg-white rounded-md border border-gray-200"><polygon points={pts} fill="rgba(129, 178, 154, 0.2)" stroke="#E07A5F" strokeWidth="3" strokeLinejoin="round" /></svg>;
+    };
+
+    const AngleFigure = ({ data }) => {
+      if (!data) return null;
+      const rad = data.angle * Math.PI / 180, arcX = 90 + 30 * Math.cos(rad), arcY = 90 - 30 * Math.sin(rad);
+      const arcPath = `M 120 90 A 30 30 0 ${data.angle > 180 ? 1 : 0} 0 ${arcX} ${arcY}`;
+      return <svg viewBox="0 0 180 120" className="w-auto max-w-[280px] h-24 sm:h-28 mb-2 drop-shadow-md shrink-0 bg-white rounded-md border border-gray-200"><line x1="90" y1="90" x2="160" y2="90" stroke="#3D405B" strokeWidth="3" strokeLinecap="round"/><line x1="90" y1="90" x2={90+70*Math.cos(rad)} y2={90-70*Math.sin(rad)} stroke="#3D405B" strokeWidth="3" strokeLinecap="round"/><path d={arcPath} fill="none" stroke="#E07A5F" strokeWidth="2.5"/><text x="125" y="75" fontSize="14" fill="#E07A5F" fontWeight="bold">あ</text></svg>;
+    };
+
+    const QuadFigure = ({ data }) => {
+      if (!data) return null;
+      let pts = data.type==='trapezoid'?"30,20 70,20 90,80 10,80":data.type==='parallelogram'?"40,20 90,20 60,80 10,80":"50,10 90,50 50,90 10,50";
+      return <svg viewBox="0 0 100 100" className="w-auto h-24 sm:h-32 mb-2 drop-shadow-md shrink-0 bg-white rounded-md border border-gray-200"><polygon points={pts} fill="rgba(129, 178, 154, 0.2)" stroke="#81B29A" strokeWidth="3" strokeLinejoin="round" /></svg>;
+    };
+
+    const AreaFigure = ({ data }) => {
+      if (!data) return null;
+      const maxDim = Math.max(data.w, data.h), dw = (data.w/maxDim)*60, dh = (data.h/maxDim)*60;
+      return <svg viewBox="0 0 100 100" className="w-auto h-24 sm:h-32 mb-2 drop-shadow-md shrink-0 bg-white rounded-md border border-gray-200 overflow-visible"><rect x={50-dw/2} y={50-dh/2} width={dw} height={dh} fill="rgba(224, 122, 95, 0.2)" stroke="#E07A5F" strokeWidth="2.5" /><text x="50" y={50-dh/2-6} fontSize="10" textAnchor="middle" fill="#3D405B" fontWeight="bold">{data.w}cm</text><text x={50+dw/2+6} y="50" fontSize="10" dominantBaseline="central" fill="#3D405B" fontWeight="bold">{data.h}cm</text></svg>;
+    };
+
+    const SolidFigure = ({ data }) => {
+      if (!data) return null;
+      return <svg viewBox="0 0 100 100" className="w-auto h-24 sm:h-32 mb-2 drop-shadow-md shrink-0 bg-white rounded-md border border-gray-200">{data.type==='cube'?(<g><polygon points="40,30 70,30 70,60 40,60" fill="#f87171" stroke="#3D405B" strokeWidth="2" /><polygon points="40,30 55,15 85,15 70,30" fill="#fca5a5" stroke="#3D405B" strokeWidth="2" /><polygon points="70,30 85,15 85,45 70,60" fill="#ef4444" stroke="#3D405B" strokeWidth="2" /></g>):(<g><polygon points="20,40 70,40 70,80 20,80" fill="#4ea583" stroke="#3D405B" strokeWidth="2" /><polygon points="20,40 40,20 90,20 70,40" fill="#81B29A" stroke="#3D405B" strokeWidth="2" /><polygon points="70,40 90,20 90,60 70,80" fill="#388c6b" stroke="#3D405B" strokeWidth="2" /></g>)}</svg>;
+    };
+
+    const ClockFace = ({ timeStr }) => {
+      if (!timeStr) return null;
+      const [h, m] = timeStr.split(':').map(Number);
+      const ha = (h % 12) * 30 + (m / 60) * 30, ma = m * 6;
+      return <svg viewBox="0 0 100 100" className="w-24 h-24 sm:w-32 sm:h-32 mb-2 drop-shadow-md shrink-0"><circle cx="50" cy="50" r="46" fill="white" stroke="#3D405B" strokeWidth="4"/>{[...Array(60)].map((_, i) => i%5!==0&&<line key={i} x1="50" y1="6" x2="50" y2="8" transform={`rotate(${i * 6} 50 50)`} stroke="#81B29A" strokeWidth="1.5" />)}{[...Array(12)].map((_, i) => <line key={i} x1="50" y1="5" x2="50" y2="10" transform={`rotate(${i * 30} 50 50)`} stroke="#3D405B" strokeWidth="2.5" />)}{[...Array(12)].map((_, i) => <text key={i} x={50+31*Math.sin((i+1)*30*Math.PI/180)} y={51-31*Math.cos((i+1)*30*Math.PI/180)} textAnchor="middle" dominantBaseline="central" fontSize="12" fill="#3D405B" fontWeight="bold">{i+1}</text>)}<line x1="50" y1="50" x2="50" y2="26" transform={`rotate(${ha} 50 50)`} stroke="#E07A5F" strokeWidth="4" strokeLinecap="round" /><line x1="50" y1="50" x2="50" y2="12" transform={`rotate(${ma} 50 50)`} stroke="#81B29A" strokeWidth="3" strokeLinecap="round" /><circle cx="50" cy="50" r="3.5" fill="#3D405B" /></svg>;
+    };
+
+    // --- UIコンポーネント ---
+    const GradeBox = ({ grade, onClick }) => {
+      const pinColors = ['', 'pin-blue', 'pin-yellow', 'pin-green', '', 'pin-blue'];
+      const pinClass = pinColors[grade - 1] || '';
+      const tapeRotations = ['rotate-[-3deg]', 'rotate-[2deg]', 'rotate-[-1deg]', 'rotate-[4deg]', 'rotate-[-2deg]', 'rotate-[1deg]'];
+      const rotation = tapeRotations[grade - 1];
+
+      return (
+        <div onClick={onClick} className={`bg-paper w-full aspect-[4/3] rounded-sm flex flex-col items-center justify-center relative cursor-pointer hover:-translate-y-1 hover:shadow-lg transition-all shadow-md ${rotation}`}>
+          <div className={`pin ${pinClass}`}></div>
+          <span className="font-rounded text-3xl sm:text-4xl font-bold text-bluegrey mt-2">{grade}年生</span>
+        </div>
+      );
+    };
+
+    const UnitNote = ({ grade, title, onClick, isSelected }) => {
+      return <div onClick={onClick} className={`bg-white w-full h-24 sm:h-28 rounded-sm flex flex-col items-center justify-center relative cursor-pointer transition-all p-3 ${isSelected ? 'border-4 border-terracotta transform -translate-y-1 shadow-lg ring-2 ring-terracotta/30' : 'border border-gray-100 shadow-md hover:-translate-y-1 hover:shadow-lg'}`}>{isSelected && <div className="absolute -top-3 -right-3 w-7 h-7 sm:w-8 sm:h-8 bg-terracotta text-white rounded-full flex items-center justify-center font-bold text-lg sm:text-xl shadow-md border-2 border-white z-20">✓</div>}<span className="font-rounded text-bluegrey font-bold text-center leading-snug text-sm sm:text-base mt-2 whitespace-pre-wrap">{title}</span></div>;
+    };
+
+    // --- メインアプリケーション ---
+    const App = () => {
+      const [windowSize, setWindowSize] = useState({ width: window.innerWidth, height: window.innerHeight });
+      const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+      useEffect(() => {
+        const handleResize = () => { setWindowSize({ width: window.innerWidth, height: window.innerHeight }); setIsMobile(window.innerWidth < 768); };
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+      }, []);
+
+      const [gameState, setGameState] = useState('TITLE'); 
+      const [selectedGrade, setSelectedGrade] = useState(1);
+      const [selectedUnits, setSelectedUnits] = useState([]);
+      const [questions, setQuestions] = useState([]);
+      const [currentIndex, setCurrentIndex] = useState(0);
+      const [score, setScore] = useState(0);
+      
+      const [inputMode, setInputMode] = useState('normal'); 
+      const [userInput, setUserInput] = useState('');
+      const [fractionInput, setFractionInput] = useState({ num: '', den: '' });
+      const [timeInput, setTimeInput] = useState({ h: '', m: '' }); 
+      const [remainderInput, setRemainderInput] = useState({ q: '', r: '' }); 
+      
+      const [feedback, setFeedback] = useState(null);
+      const [errorMessage, setErrorMessage] = useState('');
+      const [mistakes, setMistakes] = useState([]);
+      const [isReviewMode, setIsReviewMode] = useState(false);
+      
+      const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+      const [handedness, setHandedness] = useState('right');
+      
+      const [isDrawing, setIsDrawing] = useState(false);
+      const drawCanvasRef = useRef(null);
+      const canvasContainerRef = useRef(null);
+      
+      const inputRef = useRef(null);
+      const numInputRef = useRef(null);
+      const denInputRef = useRef(null);
+      const hourInputRef = useRef(null);
+      const minInputRef = useRef(null);
+      const quoInputRef = useRef(null);
+      const remInputRef = useRef(null);
+
+      const startGame = () => {
+        let combinedQuestions = [];
+        selectedUnits.forEach(unit => {
+          if (GENERATORS[selectedGrade][unit]) {
+            combinedQuestions = [...combinedQuestions, ...GENERATORS[selectedGrade][unit]()];
+          }
+        });
+        
+        if(combinedQuestions.length === 0) { alert('このたんげんの もんだいは まだ ありません！'); return; }
+
+        const shuffled = combinedQuestions.sort(() => 0.5 - Math.random());
+        setQuestions(shuffled);
+        setCurrentIndex(0);
+        setScore(0);
+        setMistakes([]);
+        setIsReviewMode(false);
+        setGameState('PLAYING');
+        resetQuestionState(0, shuffled);
+      };
+
+      const startReview = () => {
+        const shuffledMistakes = [...mistakes].sort(() => 0.5 - Math.random());
+        setQuestions(shuffledMistakes);
+        setMistakes([]); 
+        setCurrentIndex(0);
+        setIsReviewMode(true);
+        setGameState('PLAYING');
+        resetQuestionState(0, shuffledMistakes);
+      };
+
+      const resetQuestionState = (nextIndex = currentIndex, qList = questions) => {
+        setFeedback(null); setErrorMessage(''); setUserInput(''); setFractionInput({ num: '', den: '' }); setTimeInput({ h: '', m: '' }); setRemainderInput({ q: '', r: '' }); clearCanvas();
+        const nextQ = qList[nextIndex];
+        let nextMode = 'normal';
+        if (nextQ && nextQ.isRemainder) nextMode = 'remainder';
+        else if (nextQ && nextQ.isFractionUnit) nextMode = 'fraction';
+        else if (nextQ && (nextQ.a.includes(':') || nextQ.timeMode)) nextMode = 'time';
+        setInputMode(nextMode);
+        
+        setTimeout(() => {
+          if (nextMode === 'fraction') numInputRef.current?.focus();
+          else if (nextMode === 'time') hourInputRef.current?.focus();
+          else if (nextMode === 'remainder') quoInputRef.current?.focus();
+          else inputRef.current?.focus();
+        }, 50);
+      };
+
+      const handleNormalChange = (v) => setUserInput(v.replace(/[０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0)).replace(/[．。、，,]/g, '.'));
+      const handleFractionChange = (f, v) => setFractionInput(p => ({...p, [f]: v.replace(/[０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0)).replace(/[^\d]/g, '').slice(0, 3)}));
+      const handleTimeChange = (f, v) => {
+        let val = v.replace(/[０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0)).replace(/[^\d]/g, '').slice(0, 2);
+        setTimeInput(p => ({...p, [f]: val}));
+        if (f === 'h' && val.length === 2) minInputRef.current?.focus();
+      };
+      
+      const handleRemainderChange = (f, v) => {
+        let val = v.replace(/[０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0))
+                   .replace(/[．。、，,]/g, '.')
+                   .replace(/[^\d.]/g, '')
+                   .slice(0, 6);
+        setRemainderInput(p => ({...p, [f]: val}));
+      };
+
+      const checkAnswer = () => {
+        const cur = questions[currentIndex];
+        if (!cur) return;
+        let ok = false, ansStr = '', err = '';
+        const norm = (s) => (s || '').replace(/[０-９]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0)).replace(/[．。、，,]/g, '.').replace(/\s+/g, '');
+        
+        if (inputMode === 'fraction') {
+          if (!fractionInput.num && !fractionInput.den) return;
+          ansStr = `${norm(fractionInput.num)}/${norm(fractionInput.den)}`;
+          if (ansStr === cur.a) ok = true;
+          else if (norm(fractionInput.den) === '1' && norm(fractionInput.num) === cur.a) err = 'ぶんぼ が 1 のときは、せいすう で こたえよう！';
+        } else if (inputMode === 'time') {
+          if (!timeInput.h && !timeInput.m) return;
+          const vH = parseInt(norm(timeInput.h) || '0', 10), vM = parseInt(norm(timeInput.m) || '0', 10);
+          const [aH, aM] = cur.a.split(':').map(s => parseInt(s, 10));
+          if (vH === aH && vM === aM) ok = true;
+          else err = `こたえ：${aH}じ ${aM}ふん`;
+        } else if (inputMode === 'remainder') {
+          if (!remainderInput.q && !remainderInput.r) return;
+          const userQ = norm(remainderInput.q);
+          const userR = norm(remainderInput.r);
+          
+          let ansQ = cur.a;
+          let ansR = '';
+          if (cur.a.includes('...')) {
+            const parts = cur.a.split('...');
+            ansQ = parts[0];
+            ansR = parts[1];
+          }
+          
+          if (userQ === ansQ && (userR === ansR || (userR === '' && ansR === '0') || (userR === '0' && ansR === ''))) {
+            ok = true;
+          } else {
+            err = `こたえ：${ansQ}${ansR && ansR !== '0' ? ` あまり ${ansR}` : ''}`;
+          }
+        } else {
+          if (!userInput) return;
+          ansStr = norm(userInput);
+          ok = (ansStr === cur.a);
+        }
+        
+        if (ok) { setFeedback('⭕️'); setErrorMessage(''); if (!isReviewMode) setScore(s => s + 1); }
+        else { setFeedback('❌'); setErrorMessage(err || `こたえ：${cur.a}`); setMistakes(p => [...p, cur]); }
+        setTimeout(() => { if (currentIndex + 1 < questions.length) { setCurrentIndex(i => i + 1); resetQuestionState(currentIndex + 1, questions); } else setGameState('RESULT'); }, ok ? 1500 : 2500);
+      };
+
+      const handleKeyDown = (e) => { if (e.key === 'Enter' && feedback === null && !e.nativeEvent.isComposing) checkAnswer(); };
+      const toggleInputMode = () => { const n = inputMode === 'fraction' ? 'normal' : 'fraction'; setInputMode(n); setTimeout(() => { if (n === 'fraction') numInputRef.current?.focus(); else inputRef.current?.focus(); }, 50); };
+
+      useEffect(() => { if (gameState === 'PLAYING') setupCanvas(); }, [gameState, currentIndex, isMobile, handedness, windowSize]);
+      useEffect(() => { if (gameState !== 'PLAYING') return; const observer = new ResizeObserver(() => setupCanvas(true)); if (canvasContainerRef.current) observer.observe(canvasContainerRef.current); return () => observer.disconnect(); }, [gameState, currentIndex]);
+
+      const setupCanvas = (keep = false) => {
+        if (!canvasContainerRef.current || !drawCanvasRef.current) return;
+        const ctx = drawCanvasRef.current.getContext('2d'), dpr = window.devicePixelRatio || 1, rect = canvasContainerRef.current.getBoundingClientRect();
+        if (rect.width === 0) { setTimeout(() => setupCanvas(keep), 100); return; }
+        const w = rect.width * dpr, h = rect.height * dpr;
+        if (drawCanvasRef.current.width === w && drawCanvasRef.current.height === h) return;
+        let tmp = null; if (keep && drawCanvasRef.current.width > 0) { tmp = document.createElement('canvas'); tmp.width = drawCanvasRef.current.width; tmp.height = drawCanvasRef.current.height; tmp.getContext('2d').drawImage(drawCanvasRef.current, 0, 0); }
+        drawCanvasRef.current.width = w; drawCanvasRef.current.height = h; ctx.scale(dpr, dpr); ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.lineWidth = 4; ctx.strokeStyle = '#3D405B';
+        if (tmp) ctx.drawImage(tmp, 0, 0, drawCanvasRef.current.width/dpr, drawCanvasRef.current.height/dpr);
+      };
+      
+      // 修正: キャンバスがまだ画面に存在しない場合（nullの場合）はスキップする安全対策を追加
+      const clearCanvas = () => { 
+        if (!drawCanvasRef.current) return; 
+        const ctx = drawCanvasRef.current.getContext('2d'), dpr = window.devicePixelRatio || 1; 
+        ctx.clearRect(0, 0, drawCanvasRef.current.width/dpr, drawCanvasRef.current.height/dpr); 
+      };
+      
+      const startDrawing = (e) => { if(e.cancelable) e.preventDefault(); setIsDrawing(true); const rect = drawCanvasRef.current.getBoundingClientRect(), dpr = window.devicePixelRatio || 1, x = ((e.touches ? e.touches[0].clientX : e.clientX) - rect.left) * (drawCanvasRef.current.width/dpr/rect.width), y = ((e.touches ? e.touches[0].clientY : e.clientY) - rect.top) * (drawCanvasRef.current.height/dpr/rect.height); const ctx = drawCanvasRef.current.getContext('2d'); ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x, y+0.1); ctx.stroke(); };
+      const draw = (e) => { if (!isDrawing) return; if(e.cancelable) e.preventDefault(); const rect = drawCanvasRef.current.getBoundingClientRect(), dpr = window.devicePixelRatio || 1, x = ((e.touches ? e.touches[0].clientX : e.clientX) - rect.left) * (drawCanvasRef.current.width/dpr/rect.width), y = ((e.touches ? e.touches[0].clientY : e.clientY) - rect.top) * (drawCanvasRef.current.height/dpr/rect.height); const ctx = drawCanvasRef.current.getContext('2d'); ctx.lineTo(x, y); ctx.stroke(); };
+      const stopDrawing = () => setIsDrawing(false);
+
+      const displayUnitName = selectedUnits.length === 1 ? selectedUnits[0] : `${selectedUnits[0]} など ${selectedUnits.length}つのノート`;
+
+      const formatMathText = (text) => {
+        if (typeof text !== 'string') return text;
+        const parts = text.split(/(\d+\/\d+)/g);
+        return (
+          <span className="inline-flex items-center justify-center flex-wrap whitespace-pre-wrap">
+            {parts.map((part, i) => {
+              if (part.match(/\d+\/\d+/)) {
+                const [num, den] = part.split('/');
+                return (
+                  <span key={i} className="inline-flex flex-col items-center justify-center align-middle mx-1" style={{ verticalAlign: 'middle', lineHeight: '1.2' }}>
+                    <span className="border-b-[2px] border-current px-1 w-full text-center pb-0.5">{num}</span>
+                    <span className="px-1 text-center pt-0.5">{den}</span>
+                  </span>
+                );
+              }
+              return <span key={i}>{part}</span>;
+            })}
+          </span>
+        );
+      };
+
+      const renderQuestionBlock = () => {
+        const cur = questions[currentIndex];
+        return (
+          <div className="flex flex-col gap-1 sm:gap-2 flex-1 min-h-0 w-full">
+            <div className="w-full flex justify-between items-center text-bluegrey/70 px-2 font-bold mb-1 shrink-0">
+              <button onClick={() => setGameState('MENU')} className="underline hover:text-bluegrey text-sm sm:text-base" disabled={feedback !== null}>←やめる</button>
+              <div className="flex gap-4">{isReviewMode && <span className="text-terracotta animate-pulse">ふくしゅう</span>}<span>{currentIndex + 1} / {questions.length}</span>{!isReviewMode && <span>スコア: {score}</span>}</div>
+            </div>
+            <div className="w-full text-center bg-white/90 p-3 sm:p-6 rounded-2xl border border-gray-200 shadow-sm relative flex flex-col items-center justify-center min-h-[120px] md:min-h-[160px] gap-2 flex-1 overflow-y-auto">
+              {cur && cur.isClock && <ClockFace timeStr={cur.a} />}
+              {cur && cur.isGraph && <BarGraph data={cur.graphData} />}
+              {cur && cur.isLineGraph && <LineGraph data={cur.graphData} />}
+              {cur && cur.isTriangle && <TriangleFigure data={cur.triangleData} />}
+              {cur && cur.isAngle && <AngleFigure data={cur.angleData} />}
+              {cur && cur.isQuad && <QuadFigure data={cur.quadData} />}
+              {cur && cur.isArea && <AreaFigure data={cur.areaData} />}
+              {cur && cur.isSolid && <SolidFigure data={cur.solidData} />}
+              {cur && cur.isPieGraph && <PieGraph data={cur.graphData} />}
+              {cur && cur.isBandGraph && <BandGraph data={cur.graphData} />}
+              {cur && cur.isSymmetry && <SymmetryFigure data={cur.symmetryData} />}
+              <p className="text-xl sm:text-2xl lg:text-3xl font-kyokasho text-bluegrey tracking-wider whitespace-pre-wrap leading-snug mt-auto mb-auto px-1 w-full">
+                {cur ? formatMathText(cur.q) : ''}
+              </p>
+              {feedback && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-50 animate-pop-in bg-white/40 rounded-2xl backdrop-blur-sm">
+                  <span className={`text-[7rem] sm:text-[9rem] drop-shadow-md opacity-90 leading-none ${feedback === '⭕️' ? 'text-sage' : 'text-terracotta'}`}>{feedback}</span>
+                  {feedback === '❌' && errorMessage && <div className="mt-2 bg-white/95 px-4 py-2 rounded-xl border-4 border-terracotta text-terracotta text-lg sm:text-xl font-bold shadow-lg">{formatMathText(errorMessage)}</div>}
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      };
+
+      const renderInputBlock = () => (
+        <div className="w-full flex flex-col gap-2 mt-auto shrink-0 pb-1">
+          {selectedGrade >= 3 && questions[currentIndex] && questions[currentIndex].isFractionUnit && (
+            <div className="flex justify-end mb-[-4px] sm:mb-0 relative z-20"><button onClick={toggleInputMode} disabled={feedback !== null} className="text-xs sm:text-sm font-bold text-sage underline bg-white/60 px-3 py-1 rounded-t-lg hover:bg-white hover:text-green-700 transition-colors">{inputMode === 'fraction' ? '⇅ せいすう にする' : '⇅ ぶんすう にする'}</button></div>
+          )}
+          <div className="w-full flex md:flex-col gap-2 sm:gap-3 relative z-10">
+            {inputMode === 'time' ? (
+              <div className="flex-1 w-full flex items-center justify-center py-2 px-1 rounded-xl border-2 border-gray-300 bg-white shadow-inner min-w-0"><div className="flex items-baseline justify-center gap-2 sm:gap-4"><input ref={hourInputRef} type="tel" inputMode="numeric" pattern="\d*" maxLength={2} value={timeInput.h} onChange={(e) => handleTimeChange('h', e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && feedback === null) minInputRef.current?.focus(); }} disabled={feedback !== null} className="w-16 sm:w-20 p-2 border-b-[3px] border-terracotta font-bold text-3xl sm:text-4xl text-center focus:outline-none focus:border-sage bg-transparent" placeholder="じ" /><span className="font-bold text-2xl sm:text-3xl text-bluegrey/80">じ</span><input ref={minInputRef} type="tel" inputMode="numeric" pattern="\d*" maxLength={2} value={timeInput.m} onChange={(e) => handleTimeChange('m', e.target.value)} onKeyDown={handleKeyDown} disabled={feedback !== null} className="w-16 sm:w-20 p-2 border-b-[3px] border-sage font-bold text-3xl sm:text-4xl text-center focus:outline-none focus:border-sage bg-transparent" placeholder="ふん" /><span className="font-bold text-2xl sm:text-3xl text-bluegrey/80">ふん</span></div></div>
+            ) : inputMode === 'fraction' ? (
+              <div className="flex-1 w-full flex items-center justify-center p-2 rounded-xl border-2 border-gray-300 bg-white shadow-inner min-w-0"><div className="flex flex-col items-center gap-1 w-24"><input ref={numInputRef} type="tel" inputMode="numeric" pattern="\d*" maxLength={3} value={fractionInput.num} onChange={(e) => handleFractionChange('num', e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && feedback === null) denInputRef.current?.focus(); }} disabled={feedback !== null} className="w-full p-1 border-b-[3px] border-gray-400 font-bold text-3xl text-center focus:outline-none focus:border-sage bg-transparent" placeholder="分子" /><input ref={denInputRef} type="tel" inputMode="numeric" pattern="\d*" maxLength={3} value={fractionInput.den} onChange={(e) => handleFractionChange('den', e.target.value)} onKeyDown={handleKeyDown} disabled={feedback !== null} className="w-full p-1 font-bold text-3xl text-center focus:outline-none focus:border-sage bg-transparent" placeholder="分母" /></div></div>
+            ) : inputMode === 'remainder' ? (
+              <div className="flex-1 w-full flex items-center justify-center py-2 px-1 rounded-xl border-2 border-gray-300 bg-white shadow-inner min-w-0">
+                <div className="flex items-baseline justify-center gap-2 sm:gap-3">
+                  <input ref={quoInputRef} type="tel" inputMode="decimal" value={remainderInput.q} onChange={(e) => handleRemainderChange('q', e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && feedback === null) remInputRef.current?.focus(); }} disabled={feedback !== null} className="w-20 sm:w-24 p-2 border-b-[3px] border-terracotta font-bold text-3xl sm:text-4xl text-center focus:outline-none focus:border-sage bg-transparent" placeholder="こたえ" />
+                  <span className="font-bold text-lg sm:text-xl text-bluegrey/80">あまり</span>
+                  <input ref={remInputRef} type="tel" inputMode="decimal" value={remainderInput.r} onChange={(e) => handleRemainderChange('r', e.target.value)} onKeyDown={handleKeyDown} disabled={feedback !== null} className="w-16 sm:w-20 p-2 border-b-[3px] border-sage font-bold text-3xl sm:text-4xl text-center focus:outline-none focus:border-sage bg-transparent" placeholder="？" />
+                </div>
+              </div>
+            ) : (
+              <input ref={inputRef} type="tel" inputMode="decimal" value={userInput} onChange={(e) => handleNormalChange(e.target.value)} onKeyDown={handleKeyDown} disabled={feedback !== null} className="flex-1 w-full p-4 rounded-xl border-2 border-gray-300 font-bold text-3xl sm:text-4xl text-center focus:outline-none focus:border-sage bg-white shadow-inner min-w-0" placeholder="こたえ" />
+            )}
+            <button onClick={checkAnswer} disabled={feedback !== null} className="bg-terracotta text-white py-3 sm:py-4 px-6 md:w-full rounded-xl shadow-md active:translate-y-1 active:shadow-sm flex items-center justify-center text-xl font-bold transition-all whitespace-nowrap">こたえる</button>
+          </div>
+        </div>
+      );
+
+      return (
+        <div className="relative overflow-hidden font-rounded text-bluegrey" style={{ width: windowSize.width, height: windowSize.height, backgroundColor: gameState === 'PLAYING' ? '#F4F1DE' : '#d0a57b' }}>
+          {gameState !== 'PLAYING' && <div className="absolute inset-0 bg-cork opacity-100 pointer-events-none"></div>}
+          {(gameState === 'TITLE' || gameState === 'UNIT_SELECT') && <button onClick={() => setIsSettingsOpen(true)} className="absolute top-4 right-4 sm:top-6 sm:right-6 bg-white/90 text-bluegrey w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center text-2xl sm:text-3xl shadow-md z-40 border border-gray-200">⚙️</button>}
+          
+          {isSettingsOpen && (
+            <div className="absolute inset-0 bg-black/40 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+              <div className="bg-paper p-6 sm:p-8 rounded-2xl shadow-2xl w-full max-w-md relative animate-pop-in border border-white">
+                <h2 className="text-3xl font-bold mb-8 text-center border-b-2 border-sage pb-2">せってい</h2>
+                <div className="mb-10"><p className="text-bluegrey/80 mb-4 text-xl text-center font-bold">ききうで（ひっさんの ばしょ）</p><p className="text-sm text-center text-gray-500 mb-4">※がめんが おおきいとき だけ かわります</p><div className="flex flex-col sm:flex-row justify-center gap-4"><button onClick={() => setHandedness('right')} className={`px-4 py-4 font-bold text-lg rounded-xl transition-all border-2 flex-1 ${handedness === 'right' ? 'bg-sage border-sage text-white' : 'bg-white border-gray-300 text-gray-500'}`}>✋ 右きき</button><button onClick={() => setHandedness('left')} className={`px-4 py-4 font-bold text-lg rounded-xl transition-all border-2 flex-1 ${handedness === 'left' ? 'bg-sage border-sage text-white' : 'bg-white border-gray-300 text-gray-500'}`}>🤚 左きき</button></div></div>
+                <button onClick={() => setIsSettingsOpen(false)} className="w-full bg-terracotta text-white py-4 rounded-full shadow-md text-2xl font-bold transition-all">とじる</button>
+              </div>
+            </div>
+          )}
+
+          {gameState === 'TITLE' && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center p-4"><div className="bg-paper px-8 py-4 sm:py-6 rounded-sm shadow-md mb-8 transform -rotate-1 relative"><div className="masking-tape"></div><h1 className="text-4xl sm:text-5xl font-bold tracking-wider">サンスウノート</h1></div><p className="text-white bg-bluegrey/80 px-4 py-1 rounded-full mb-8 font-bold">がくねん を えらんでね</p><div className="grid grid-cols-2 md:grid-cols-3 gap-6 sm:gap-10 w-full max-w-2xl px-4">{[1, 2, 3, 4, 5, 6].map(g => <GradeBox key={g} grade={g} onClick={() => { setSelectedGrade(g); setSelectedUnits([]); setGameState('UNIT_SELECT'); }} />)}</div></div>
+          )}
+
+          {gameState === 'UNIT_SELECT' && (
+            <div className="absolute inset-0 flex flex-col items-center"><div className="w-full flex-none pt-4 px-4 flex flex-col items-center"><div className="w-full max-w-4xl flex flex-col sm:flex-row justify-between items-center mb-4 gap-4 bg-paper/90 p-4 rounded-lg shadow-sm border border-white"><button onClick={() => setGameState('TITLE')} className="text-bluegrey/70 underline text-lg hover:text-bluegrey font-bold">← がくねんをえらびなおす</button><h2 className="text-2xl font-bold">{selectedGrade}ねんせい の ノート</h2></div><div className="w-full max-w-4xl flex justify-end gap-6 px-2 mb-2"><button onClick={() => setSelectedUnits(Object.keys(GENERATORS[selectedGrade]))} className="text-sm font-bold text-sage underline">すべてえらぶ</button><button onClick={() => setSelectedUnits([])} className="text-sm font-bold text-terracotta underline">ぜんぶけす</button></div></div><div className="w-full flex-1 overflow-y-auto px-4 pb-32"><div className="grid grid-cols-2 sm:grid-cols-3 gap-4 w-full max-w-4xl mx-auto">{Object.keys(GENERATORS[selectedGrade]).map(u => <UnitNote key={u} grade={selectedGrade} title={u} isSelected={selectedUnits.includes(u)} onClick={() => setSelectedUnits(prev => prev.includes(u) ? prev.filter(x => x !== u) : [...prev, u])} />)}</div></div>{selectedUnits.length > 0 && <div className="absolute bottom-6 w-full flex justify-center animate-open-note z-10 px-4 pointer-events-none"><button onClick={() => { setGameState('INSERTING'); setTimeout(() => { startGame(); }, 1000); }} className="bg-sage text-white py-3 px-8 sm:py-4 sm:px-12 rounded-full shadow-lg flex items-center justify-center gap-3 text-lg sm:text-xl font-bold transition-all border-4 border-white w-full max-w-sm pointer-events-auto"><span>{selectedUnits.length}つのノートをひらく</span></button></div>}</div>
+          )}
+
+          {gameState === 'INSERTING' && <div className="absolute inset-0 flex items-center justify-center bg-black/20 backdrop-blur-sm z-50"><div className="bg-paper p-8 rounded-lg shadow-xl flex flex-col items-center animate-pop-in border border-white"><div className="w-16 h-16 border-4 border-sage border-t-transparent rounded-full animate-spin mb-4"></div><p className="text-xl font-bold">ノートをひらいています...</p></div></div>}
+          
+          {['MENU', 'RESULT'].includes(gameState) && (
+            <div className="absolute inset-0 flex flex-col p-4 sm:p-8"><div className="w-full max-w-3xl mx-auto flex-1 flex flex-col items-center justify-center bg-paper rounded-lg shadow-xl p-4 sm:p-6 relative animate-open-note border border-white">{gameState === 'MENU' ? (<div className="text-center w-full h-full flex flex-col items-center justify-center"><button onClick={() => setGameState('UNIT_SELECT')} className="absolute top-2 left-2 text-bluegrey/60 underline font-bold text-sm sm:text-base">← もどる</button><div className="bg-white px-8 py-4 rounded-full shadow-sm mb-8 border border-gray-100 flex flex-col items-center"><p className="text-sage font-bold mb-1">{selectedGrade}年生</p><h2 className="text-xl sm:text-2xl font-bold border-b-2 border-sage pb-1 inline-block">{displayUnitName}</h2></div><button onClick={startGame} className="group flex flex-col items-center"><div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full bg-terracotta shadow-[0_6px_0_#b55b45] flex items-center justify-center border-4 border-white mb-4"><svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-white ml-2" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg></div><span className="text-2xl font-bold">スタート！</span></button></div>) : (<div className="text-center flex flex-col items-center justify-center h-full w-full animate-pop-in"><h2 className="text-3xl sm:text-4xl font-bold mb-6 border-b-2 border-sage pb-2">{isReviewMode ? 'ふくしゅう けっか' : 'けっか はっぴょう'}</h2>{!isReviewMode && <p className="text-[5rem] sm:text-[7rem] font-bold text-terracotta mb-4 leading-none">{score} <span className="text-2xl sm:text-3xl text-bluegrey">もん せいかい！</span></p>}<div className="mb-8 font-bold text-lg sm:text-xl">{mistakes.length === 0 ? <p className="text-sage text-2xl">パーフェクト！すごいぞ！🎉</p> : <div className="bg-white/80 p-4 rounded-xl border-2 border-mustard"><p className="mb-2">まちがえたもんだいが <span className="text-terracotta text-2xl">{mistakes.length}</span> もん あるよ。</p><p>もういちど ちょうせん しよう！</p></div>}</div><div className="flex flex-col sm:flex-row gap-4">{mistakes.length > 0 && <button onClick={startReview} className="bg-mustard text-bluegrey font-bold px-8 py-4 rounded-full shadow-md text-xl border-2 border-white">ふくしゅうする</button>}<button onClick={() => setGameState('UNIT_SELECT')} className="bg-bluegrey text-white font-bold px-8 py-4 rounded-full shadow-md text-xl border-2 border-white">ノートをとじる</button></div></div>)}</div></div>
+          )}
+
+          {gameState === 'PLAYING' && questions.length > 0 && (
+            <div className="absolute inset-0 flex flex-col bg-paper animate-open-note z-30"><div className="absolute inset-0 bg-paper opacity-50 pointer-events-none"></div><div className={`flex-1 w-full flex gap-2 sm:gap-3 p-2 sm:p-4 min-h-0 relative z-10 ${isMobile ? 'flex-col' : (handedness === 'left' ? 'flex-row-reverse' : 'flex-row')}`}><div className={`flex flex-col gap-2 sm:gap-4 min-h-0 ${isMobile ? 'w-full max-h-[48vh] shrink-0' : 'w-72 lg:w-[450px] shrink-0 h-full'}`}>{renderQuestionBlock()}{!isMobile && renderInputBlock()}</div><div ref={canvasContainerRef} className="flex-1 w-full bg-math-paper rounded-2xl shadow-inner border-2 border-sage/40 relative overflow-hidden min-h-[150px]"><canvas ref={drawCanvasRef} onMouseDown={startDrawing} onMouseMove={draw} onMouseUp={stopDrawing} onMouseOut={stopDrawing} onTouchStart={startDrawing} onTouchMove={draw} onTouchEnd={stopDrawing} className="absolute inset-0 w-full h-full touch-none cursor-crosshair" /><button onClick={clearCanvas} disabled={feedback !== null} className="absolute bottom-4 right-4 bg-white/90 text-gray-600 px-5 py-3 rounded-full text-base font-bold shadow-md z-10 border border-gray-200">けす</button></div>{isMobile && renderInputBlock()}</div></div>
+          )}
+        </div>
+      );
+    };
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
