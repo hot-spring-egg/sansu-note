@@ -1,28 +1,3 @@
-<!-- 
-/**
- * サンスウノート - サーバーサイド（GAS）
- * パターンB：DB不要・完全スタンドアロン型
- */
-
-function onOpen() {
-  const ui = SpreadsheetApp.getUi();
-  ui.createMenu('アプリ管理')
-    .addItem('初期セットアップ', 'setupApp')
-    .addToUi();
-}
-
-function setupApp() {
-  const ui = SpreadsheetApp.getUi();
-  ui.alert('【お知らせ】\nこの「サンスウノート」は、600人同時接続に対応するため、スプレッドシート（DB）を使用しない完全スタンドアロン型として設計されています。\nそのため、シートの初期セットアップは不要です。そのままWebアプリとしてデプロイしてご活用ください。');
-}
-
-function doGet() {
-  return HtmlService.createHtmlOutputFromFile('index')
-    .setTitle('サンスウノート')
-    .setFaviconUrl('https://drive.google.com/thumbnail?sz=w256&id=1xfiZxxMBWfloB3KNScV44n63JABfD0U&.png')
-    .addMetaTag('viewport', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
-}
--->
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -30,7 +5,7 @@ function doGet() {
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>サンスウノート</title>
   
-  <link rel="icon" href="https://drive.google.com/thumbnail?sz=w256&id=1xfiZxxMBWfloB3KNScV44n63JABfD0U">
+  <link rel="icon" href="favicon.png">
   <link rel="apple-touch-icon" href="https://drive.google.com/thumbnail?sz=w256&id=1xfiZxxMBWfloB3KNScV44n63JABfD0U">
   
   <script src="https://cdn.tailwindcss.com"></script>
