@@ -67,14 +67,17 @@
     const rand = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
     const gcd = (a, b) => b === 0 ? a : gcd(b, a % b);
 
+    // 修正箇所：重複判定を「問題文（q.q）」だけではなく「問題データ全体」で行うように変更
     const generateUnique = (createFn, maxCount = 10, maxAttempts = 200) => {
       const qList = [];
       const seen = new Set();
       let attempts = 0;
       while (qList.length < maxCount && attempts < maxAttempts) {
         const q = createFn();
-        if (!seen.has(q.q)) {
-          seen.add(q.q);
+        // オブジェクト全体を文字列化してキーにすることで、時計のように問題文が同じでも答えが違う問題を別物として扱います
+        const uniqueKey = JSON.stringify(q);
+        if (!seen.has(uniqueKey)) {
+          seen.add(uniqueKey);
           qList.push(q);
         }
         attempts++;
@@ -593,9 +596,9 @@
       
       const handleRemainderChange = (f, v) => {
         let val = v.replace(/[０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0))
-                   .replace(/[．。、，,]/g, '.')
-                   .replace(/[^\d.]/g, '')
-                   .slice(0, 6);
+                    .replace(/[．。、，,]/g, '.')
+                    .replace(/[^\d.]/g, '')
+                    .slice(0, 6);
         setRemainderInput(p => ({...p, [f]: val}));
       };
 
