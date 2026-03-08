@@ -210,16 +210,252 @@
 })
       },
       4: {
-        "大きい数のしくみ": () => generateUnique(() => { const type = rand(1, 3); if (type === 1) { const a = rand(2, 9); return { q: `${a}億 の 10倍 は\n何億？`, a: String(a * 10), isHissan: false }; } else if (type === 2) { const a = rand(2, 9); return { q: `${a}兆 を 10で わった数は\n何千億？`, a: String(a * 10), isHissan: false }; } else { const a = rand(1, 9); const b = rand(1, 9); return { q: `一億を ${a}こ、一万を ${b}こ\nあつめた 数は？`, a: `${a}000${b}0000`, isHissan: false }; } }),
+        "大きい数のしくみ": () => generateUnique(() => {
+  const pattern = rand(1, 5);
+
+  if (pattern === 1) {
+    // パターン1: 10倍の数（元のコード）
+    const a = rand(2, 9);
+    return { 
+      q: `${a}億 の 10倍 は\n何億 ですか？`, 
+      a: String(a * 10), 
+      isHissan: false 
+    };
+
+  } else if (pattern === 2) {
+    // パターン2: 1/10の数（修正版）
+    const a = rand(2, 9);
+    return { 
+      q: `${a}兆 を 10で わった数は\n何千億 ですか？`, 
+      a: String(a), 
+      isHissan: false 
+    };
+
+  } else if (pattern === 3) {
+    // パターン3: 数の構成（元のコード）
+    const a = rand(1, 9);
+    const b = rand(1, 9);
+    return { 
+      q: `1億を ${a}こ、1万を ${b}こ\nあつめた 数は？\n（数字で こたえよう）`, 
+      a: `${a}000${b}0000`, 
+      isHissan: false 
+    };
+
+  } else if (pattern === 4) {
+    // パターン4: 大きな数の単位変換（千万→億）
+    const a = rand(2, 9);
+    return { 
+      q: `1000万 を ${a * 10}こ\nあつめた 数は\n何億 ですか？`, 
+      a: String(a), 
+      isHissan: false 
+    };
+
+  } else {
+    // パターン5: 大きな数のしくみ（10こで上の位）
+    const units = [
+      { target: "万", sub: "千" },
+      { target: "億", sub: "千万" },
+      { target: "兆", sub: "千億" }
+    ];
+    const unit = units[rand(0, 2)];
+    return {
+      q: `1${unit.target} は、1${unit.sub}を\n何こ あつめた 数ですか？`,
+      a: "10",
+      isHissan: false
+    };
+  }
+}),
         "折れ線グラフと表": () => generateUnique(() => { const values = Array.from({length: 5}, () => rand(10, 35)); const months = [4, 5, 6, 7, 8]; const targetIdx = rand(0, 4); return { q: `${months[targetIdx]}月の きおんは\n何度 ですか？`, a: String(values[targetIdx]), isLineGraph: true, graphData: { title: "きおん の しらべ", labels: months.map(m=>m+"月"), values, max: 40, step: 5, subStep: 1 }, isHissan: false }; }),
         "わり算の筆算(1)": () => generateUnique(() => { const b = rand(2, 9); const quo = rand(11, 49); const r = rand(1, b - 1); const a = b * quo + r; return { q: `${a} ÷ ${b} =`, a: `${quo}...${r}`, isHissan: true, isRemainder: true }; }),
-        "角の大きさ": () => generateUnique(() => { const angles = [30, 45, 60, 90, 120, 135, 150]; const a = angles[rand(0, angles.length-1)]; return { q: "分度器を使いましょう。\nこの 角の 大きさは\n何度 ですか？", a: String(a), isAngle: true, angleData: { angle: a }, isHissan: false }; }),
+        "角の大きさ": () => generateUnique(() => {
+  const pattern = rand(1, 5);
+
+  if (pattern === 1) {
+    // パターン1: 分度器で測る（基本の角・元のコード）
+    const angles = [30, 45, 60, 90, 120, 135, 150];
+    const a = angles[rand(0, angles.length - 1)];
+    return { 
+      q: "分度器を 使いましょう。\nこの 角の 大きさは\n何度 ですか？", 
+      a: String(a), 
+      isAngle: true, 
+      angleData: { angle: a }, 
+      isHissan: false 
+    };
+
+  } else if (pattern === 2) {
+    // パターン2: 180度より大きい角
+    // 4年生で初めて、半回転（180度）を超える角を学習します
+    const angles = [210, 225, 240, 270, 300, 315, 330];
+    const a = angles[rand(0, angles.length - 1)];
+    return { 
+      q: "この 角の 大きさは\n何度 ですか？\n（180度より 大きい 角です）", 
+      a: String(a), 
+      isAngle: true, 
+      angleData: { angle: a }, 
+      isHissan: false 
+    };
+
+  } else if (pattern === 3) {
+    // パターン3: 直角の数と角度の関係
+    const rightAngles = rand(2, 4); // 2直角、3直角、4直角
+    return { 
+      q: `1直角は 90度 です。\nでは、${rightAngles}直角は\n何度 ですか？`, 
+      a: String(rightAngles * 90), 
+      isHissan: false 
+    };
+
+  } else if (pattern === 4) {
+    // パターン4: 一直線（180度）を利用したひき算
+    const a = rand(3, 14) * 10; // 30度 〜 140度
+    return { 
+      q: `一直線の 角の 大きさは\n180度 です。\n180度の うち、${a}度を ひいた\n残りの 角は 何度ですか？`, 
+      a: String(180 - a), 
+      isHissan: true 
+    };
+
+  } else {
+    // パターン5: 1回転（360度）を利用したひき算
+    const a = rand(5, 15) * 10; // 50度 〜 150度
+    return { 
+      q: `1回転の 角の 大きさは\n360度 です。\n360度の うち、${a}度を ひいた\n残りの 角は 何度ですか？`, 
+      a: String(360 - a), 
+      isHissan: true 
+    };
+  }
+}),
         "小数のしくみ": () => generateUnique(() => { const type = rand(1, 3); if (type === 1) { const a = rand(11, 99); return { q: `0.01 を ${a}こ\nあつめた 数は？`, a: String(a / 100), isHissan: false }; } else if (type === 2) { const a = rand(1, 9); const b = rand(1, 9); return { q: `${a/10} + ${b/100} =`, a: String((a*10+b)/100), isHissan: true }; } else { const a = rand(11, 99); return { q: `${a/100} は 0.01 を\n何こ あつめた数？`, a: String(a), isHissan: false }; } }),
         "わり算の筆算(2)": () => generateUnique(() => { const b = rand(11, 49); const quo = rand(2, 9); const r = rand(1, b - 1); const a = b * quo + r; return { q: `${a} ÷ ${b} =`, a: `${quo}...${r}`, isHissan: true, isRemainder: true }; }),
-        "がい数の表し方と使い方": () => generateUnique(() => { const a = rand(1111, 9999); const ans = Math.round(a / 100) * 100; return { q: `${a} を 四捨五入して\n百の位までの\nがい数に しよう`, a: String(ans), isHissan: true }; }),
-        "計算のきまり": () => generateUnique(() => { if (rand(1, 2) === 1) { const a = rand(2, 9); const b = rand(2, 9); const c = rand(2, 9); return { q: `${a*10} - ${b} × ${c} =`, a: String(a*10 - b*c), isHissan: true }; } else { const a = rand(2, 9); const b = rand(2, 5); const c = rand(2, 5); return { q: `${a} × ${b} + ${a} × ${c} =`, a: String(a*(b+c)), isHissan: true }; } }),
+        "がい数の表し方と使い方": () => generateUnique(() => {
+  const pattern = rand(1, 5);
+
+  if (pattern === 1) {
+    // パターン1: 百の位までのがい数（十の位を四捨五入）
+    const a = rand(1111, 9999);
+    const ans = Math.round(a / 100) * 100;
+    return { 
+      q: `${a} を 四捨五入して\n百の位までの\nがい数に しよう`, 
+      a: String(ans), 
+      isHissan: true 
+    };
+
+  } else if (pattern === 2) {
+    // パターン2: 千の位までのがい数（百の位を四捨五入）
+    const a = rand(11111, 99999);
+    const ans = Math.round(a / 1000) * 1000;
+    return { 
+      q: `${a} を 四捨五入して\n千の位までの\nがい数に しよう`, 
+      a: String(ans), 
+      isHissan: true 
+    };
+
+  } else if (pattern === 3) {
+    // パターン3: 上から1けたのがい数
+    const a = rand(1111, 9999);
+    const ans = Math.round(a / 1000) * 1000;
+    return { 
+      q: `${a} を 四捨五入して\n上から 1けたの\nがい数に しよう`, 
+      a: String(ans), 
+      isHissan: true 
+    };
+
+  } else if (pattern === 4) {
+    // パターン4: 上から2けたのがい数
+    const a = rand(1111, 9999);
+    const ans = Math.round(a / 100) * 100;
+    return { 
+      q: `${a} を 四捨五入して\n上から 2けたの\nがい数に しよう`, 
+      a: String(ans), 
+      isHissan: true 
+    };
+
+  } else {
+    // パターン5: 和をがい数で見積もる
+    const aBase = rand(2, 7);
+    const bBase = rand(2, 7);
+    // 100の位をランダムにして四捨五入の要素を入れる
+    const a = aBase * 1000 + rand(1, 9) * 100 + rand(10, 99);
+    const b = bBase * 1000 + rand(1, 9) * 100 + rand(10, 99);
+    const aRound = Math.round(a / 1000) * 1000;
+    const bRound = Math.round(b / 1000) * 1000;
+    return { 
+      q: `${a} と ${b} の たし算の 答えを、\nそれぞれ 上から 1けたの\nがい数に してから 見積もろう`, 
+      a: String(aRound + bRound), 
+      isHissan: true 
+    };
+  }
+}),        "計算のきまり": () => generateUnique(() => { if (rand(1, 2) === 1) { const a = rand(2, 9); const b = rand(2, 9); const c = rand(2, 9); return { q: `${a*10} - ${b} × ${c} =`, a: String(a*10 - b*c), isHissan: true }; } else { const a = rand(2, 9); const b = rand(2, 5); const c = rand(2, 5); return { q: `${a} × ${b} + ${a} × ${c} =`, a: String(a*(b+c)), isHissan: true }; } }),
         "分数": () => generateUnique(() => { const den = rand(4, 9); if (rand(0, 1) === 0) { const a = rand(1, den-1); const b = rand(1, den-a); return { q: `${a}/${den} + ${b}/${den} =`, a: (a+b === den) ? "1" : `${a+b}/${den}`, isHissan: false, isFractionUnit: true }; } else { const a = rand(2, den-1); const b = rand(1, a-1); return { q: `${a}/${den} - ${b}/${den} =`, a: `${a-b}/${den}`, isHissan: false, isFractionUnit: true }; } }),
-        "面積のくらべ方と表し方": () => generateUnique(() => { const w = rand(2, 9); const h = rand(2, 9); return { q: "この 四角形の 面積は\n何cm²？", a: String(w * h), isArea: true, areaData: { w, h }, isHissan: true }; }),
+        "面積のくらべ方と表し方": () => generateUnique(() => {
+  const pattern = rand(1, 5);
+
+  if (pattern === 1) {
+    // パターン1: 長方形の面積（図形あり）
+    const w = rand(3, 9);
+    const h = rand(2, 8);
+    // たてと横が同じにならないように調整
+    const actualH = w === h ? h + 1 : h; 
+    return { 
+      q: "この 長方形の 面積は\n何cm² ですか？", 
+      a: String(w * actualH), 
+      isArea: true, 
+      areaData: { w, h: actualH }, 
+      isHissan: true 
+    };
+
+  } else if (pattern === 2) {
+    // パターン2: 正方形の面積（図形あり）
+    const a = rand(3, 9);
+    return { 
+      q: "この 正方形の 面積は\n何cm² ですか？", 
+      a: String(a * a), 
+      isArea: true, 
+      areaData: { w: a, h: a }, 
+      isHissan: true 
+    };
+
+  } else if (pattern === 3) {
+    // パターン3: 大きな単位（m²）の文章題
+    const w = rand(1, 5) * 10;
+    const h = rand(1, 5) * 10;
+    return { 
+      q: `たて ${h}m、横 ${w}m の\n長方形の 畑の 面積は\n何m² ですか？`, 
+      a: String(w * h), 
+      isArea: false, 
+      isHissan: true 
+    };
+
+  } else if (pattern === 4) {
+    // パターン4: 面積から辺の長さを求める（逆算）
+    const w = rand(2, 9);
+    const h = rand(2, 9);
+    const area = w * h;
+    return { 
+      q: `面積が ${area}cm² で、\nたてが ${h}cm の 長方形の\n横の 長さは 何cm ですか？`, 
+      a: String(w), 
+      isArea: false, 
+      isHissan: true 
+    };
+
+  } else {
+    // パターン5: 単位の相互関係（1m² = 10000cm²、1a = 100m²など）
+    const type = rand(1, 2);
+    if (type === 1) {
+      return { 
+        q: "1m² は 何cm² ですか？", 
+        a: "10000", 
+        isArea: false, 
+        isHissan: false 
+      };
+    } else {
+      return { 
+        q: "1辺が 10m の 正方形の 面積は\n100m² です。\nこれは 何a(アール) といいますか？", 
+        a: "1", 
+        isArea: false, 
+        isHissan: false 
+      };
+    }
+  }
+}),
         "小数のかけ算とわり算": () => generateUnique(() => { if (rand(0, 1) === 0) { const a = rand(11, 49); const b = rand(2, 9); return { q: `${a/10} × ${b} =`, a: String((a*b)/10), isHissan: true }; } else { const b = rand(2, 9); const quo = rand(11, 49); const a = b * quo; return { q: `${a/10} ÷ ${b} =`, a: String(quo/10), isHissan: true }; } }),
         "直方体と立方体": () => generateUnique(() => {
   const pattern = rand(1, 5);
