@@ -96,7 +96,6 @@
         "あわせていくつ ふえるといくつ": () => generateUnique(() => { const a = rand(1, 9); const b = rand(1, 10 - a); return { q: `${a} + ${b} =`, a: String(a+b), isHissan: false }; }),
         "のこりはいくつ ちがいはいくつ": () => generateUnique(() => { const a = rand(2, 10); const b = rand(1, a - 1); return { q: `${a} - ${b} =`, a: String(a-b), isHissan: false }; }),
         "10よりおおきいかず": () => generateUnique(() => { if (rand(1, 2) === 1) { const b = rand(1, 9); return { q: `10 と ${b} で いくつ？`, a: String(10+b), isHissan: false }; } else { const ans = rand(11, 19); return { q: `${ans} は\n10 と いくつ？`, a: String(ans-10), isHissan: false }; } }),
-        
         "3つのかずのけいさん": () => generateUnique(() => { const type = rand(1, 3); if (type === 1) { const a = rand(1, 5); const b = rand(1, 5); const c = rand(1, 5); return { q: `${a} + ${b} + ${c} =`, a: String(a+b+c), isHissan: false }; } else if (type === 2) { const a = rand(6, 15); const b = rand(1, a-2); const c = rand(1, a-b-1); return { q: `${a} - ${b} - ${c} =`, a: String(a-b-c), isHissan: false }; } else { const a = rand(1, 8); const b = rand(1, 9); const c = rand(1, a+b-1); return { q: `${a} + ${b} - ${c} =`, a: String(a+b-c), isHissan: false }; } }),
         "くりあがりのあるたしざん": () => generateUnique(() => { const a = rand(2, 9); const b = rand(11 - a, 9); return { q: `${a} + ${b} =`, a: String(a+b), isHissan: false }; }),
         "くりさがりのあるひきざん": () => generateUnique(() => { const a = rand(11, 18); const b = rand(Math.max(2, a - 9), 9); return { q: `${a} - ${b} =`, a: String(a-b), isHissan: false }; }),
@@ -140,8 +139,10 @@
           }
         }),
         "3けたの数": () => generateUnique(() => { if (rand(1, 2) === 1) { const h = rand(1, 9); const t = rand(0, 9); const o = rand(1, 9); return { q: `100を ${h}こ、10を ${t}こ、\n1を ${o}こ あつめた 数は？`, a: String(h*100 + t*10 + o), isHissan: false }; } else { const a = rand(1, 9) * 100; const b = rand(1, 9) * 10; return { q: `${a} と ${b} で\nいくつ？`, a: String(a+b), isHissan: false }; } }),
+        
+        // --- 修正箇所：水のかさの問題バリエーション追加 ---
         "水のかさのたんい": () => generateUnique(() => {
-          const pattern = rand(1, 5);
+          const pattern = rand(1, 6); // 1パターン増やしました
           if (pattern === 1) {
             const l = rand(1, 9);
             return { q: `${l}L は 何dL？`, a: String(l * 10), isHissan: false };
@@ -161,13 +162,28 @@
               volumeData: { L: l, dL: dl },
               isHissan: false
             };
+          } else if (pattern === 5) {
+            // パターン5: LとdLの足し算（画像のような複合単位の計算）
+            if (rand(0, 1) === 0) {
+              const l = rand(1, 5); const dl1 = rand(1, 8); const dl2 = rand(1, 9 - dl1);
+              return { q: `${l}L ${dl1}dL ＋ ${dl2}dL ＝`, a: `${l}:${dl1 + dl2}`, isMixedUnit: true, unit1: "L", unit2: "dL", isHissan: false };
+            } else {
+              const l1 = rand(1, 5); const dl = rand(1, 9); const l2 = rand(1, 5);
+              return { q: `${l1}L ${dl}dL ＋ ${l2}L ＝`, a: `${l1 + l2}:${dl}`, isMixedUnit: true, unit1: "L", unit2: "dL", isHissan: false };
+            }
           } else {
-            const l = rand(1, 3);
-            const dl1 = rand(1, 5);
-            const dl2 = rand(1, 4);
-            return { q: `${l}L ${dl1}dL の 水に、\n${dl2}dL の 水を あわせると、\nぜんぶで 何dL に なりますか？`, a: String(l * 10 + dl1 + dl2), isHissan: false };
+            // パターン6: LとdLの引き算（画像のような複合単位の計算）
+            if (rand(0, 1) === 0) {
+              const l1 = rand(3, 8); const dl = rand(1, 9); const l2 = rand(1, l1 - 1);
+              return { q: `${l1}L ${dl}dL － ${l2}L ＝`, a: `${l1 - l2}:${dl}`, isMixedUnit: true, unit1: "L", unit2: "dL", isHissan: false };
+            } else {
+              const l = rand(1, 8); const dl1 = rand(5, 9); const dl2 = rand(1, dl1 - 1);
+              return { q: `${l}L ${dl1}dL － ${dl2}dL ＝`, a: `${l}:${dl1 - dl2}`, isMixedUnit: true, unit1: "L", unit2: "dL", isHissan: false };
+            }
           }
         }),
+        // ---------------------------------------------
+
         "時こくと時間": () => generateUnique(() => {
           const pattern = rand(1, 5);
           if (pattern === 1) {
@@ -192,25 +208,6 @@
         "かけ算(1)": () => generateUnique(() => { const a = rand(2, 5); const b = rand(1, 9); return { q: `${a} × ${b} =`, a: String(a*b), isHissan: false }; }),
         "かけ算(2)": () => generateUnique(() => { const a = [1, 6, 7, 8, 9][rand(0, 4)]; const b = rand(1, 9); return { q: `${a} × ${b} =`, a: String(a*b), isHissan: false }; }),
         "4けたの数": () => generateUnique(() => { if (rand(1, 2) === 1) { const th = rand(1, 9); const h = rand(0, 9); const t = rand(0, 9); const o = rand(1, 9); return { q: `1000を ${th}こ、100を ${h}こ、\n10を ${t}こ、1を ${o}こ\nあつめた 数は？`, a: String(th*1000 + h*100 + t*10 + o), isHissan: false }; } else { const a = rand(1, 9) * 1000; const b = rand(1, 9) * 100; return { q: `${a} と ${b} で\nいくつ？`, a: String(a+b), isHissan: false }; } }),
-        "長いものの長さのたんい": () => generateUnique(() => {
-          const pattern = rand(1, 5);
-          if (pattern === 1) {
-            const m = rand(1, 9);
-            return { q: `${m}m は 何cm？`, a: String(m * 100), isHissan: false };
-          } else if (pattern === 2) {
-            const m = rand(1, 9); const cm = rand(1, 99);
-            return { q: `${m}m ${cm}cm は\n何cm？`, a: String(m * 100 + cm), isHissan: false };
-          } else if (pattern === 3) {
-            const m = rand(2, 9);
-            return { q: `${m * 100}cm は\n何m？`, a: String(m), isHissan: false };
-          } else if (pattern === 4) {
-            const m = rand(1, 9); const cm = rand(1, 99); const total = m * 100 + cm;
-            return { q: `${total}cm は\n${m}m と 何cm？`, a: String(cm), isHissan: false };
-          } else {
-            const m = rand(1, 5); const cm = rand(10, 90);
-            return { q: `${m}m の ひも と\n${cm}cm の ひも を つなぐと、\nぜんぶで 何cm になる？`, a: String(m * 100 + cm), isHissan: false };
-          }
-        }),
         "たし算とひき算": () => generateUnique(() => { if (rand(1, 2) === 1) { const a = rand(10, 50); const b = rand(10, 50); return { q: `${a} より ${b} おおきい 数は？`, a: String(a+b), isHissan: true }; } else { const a = rand(30, 90); const b = rand(10, a-1); return { q: `${a} より ${b} ちいさい 数は？`, a: String(a-b), isHissan: true }; } }),
         "分数": () => generateUnique(() => { const den = [2, 3, 4, 8][rand(0, 3)]; return { q: `おなじ おおきさに ${den}つに\nわけたうちの１つを、\n分数で かくと？`, a: `1/${den}`, isHissan: false, isFractionUnit: true }; })
       },
@@ -879,7 +876,6 @@
       );
     };
 
-    // --- ここから新しく追加した図の描画プログラム ---
     const ScaleFigure = ({ data }) => {
       if (!data) return null;
       const angle = (data.g / 2000) * 360;
@@ -940,14 +936,16 @@
       );
     };
 
+    // --- 修正箇所：ビーカーの大きさを全体的に拡大しました ---
     const VolumeFigure = ({ data }) => {
       if (!data) return null;
+      
       const beakersL = Array.from({ length: data.L }).map((_, i) => (
-        <g key={`L${i}`} transform={`translate(${10 + i * 50}, 20)`}>
-          <path d="M 5 0 L 5 60 A 5 5 0 0 0 10 65 L 35 65 A 5 5 0 0 0 40 60 L 40 0" fill="rgba(100,149,237,0.3)" stroke="#3D405B" strokeWidth="2" strokeLinejoin="round"/>
-          <line x1="5" y1="20" x2="15" y2="20" stroke="#3D405B" strokeWidth="1" />
-          <line x1="5" y1="40" x2="15" y2="40" stroke="#3D405B" strokeWidth="1" />
-          <text x="22.5" y="45" fontSize="12" textAnchor="middle" fill="#3D405B" fontWeight="bold">1L</text>
+        <g key={`L${i}`} transform={`translate(${10 + i * 60}, 10)`}>
+          <path d="M 0 0 L 0 80 A 8 8 0 0 0 8 88 L 42 88 A 8 8 0 0 0 50 80 L 50 0" fill="rgba(100,149,237,0.3)" stroke="#3D405B" strokeWidth="2.5" strokeLinejoin="round"/>
+          <line x1="0" y1="26" x2="15" y2="26" stroke="#3D405B" strokeWidth="1.5" />
+          <line x1="0" y1="53" x2="15" y2="53" stroke="#3D405B" strokeWidth="1.5" />
+          <text x="25" y="60" fontSize="16" textAnchor="middle" fill="#3D405B" fontWeight="bold">1L</text>
         </g>
       ));
       
@@ -955,21 +953,20 @@
         const row = Math.floor(i / 5);
         const col = i % 5;
         return (
-          <g key={`dL${i}`} transform={`translate(${10 + data.L * 50 + col * 30}, ${35 + row * 40})`}>
-            <path d="M 3 0 L 3 30 A 3 3 0 0 0 6 33 L 19 33 A 3 3 0 0 0 22 30 L 22 0" fill="rgba(100,149,237,0.5)" stroke="#3D405B" strokeWidth="1.5" strokeLinejoin="round"/>
-            <text x="12.5" y="22" fontSize="8" textAnchor="middle" fill="#3D405B" fontWeight="bold">1dL</text>
+          <g key={`dL${i}`} transform={`translate(${10 + data.L * 60 + col * 35}, ${10 + row * 50})`}>
+            <path d="M 0 0 L 0 35 A 4 4 0 0 0 4 39 L 21 39 A 4 4 0 0 0 25 35 L 25 0" fill="rgba(100,149,237,0.5)" stroke="#3D405B" strokeWidth="2" strokeLinejoin="round"/>
+            <text x="12.5" y="28" fontSize="11" textAnchor="middle" fill="#3D405B" fontWeight="bold">1dL</text>
           </g>
         );
       });
 
       return (
-        <svg viewBox="0 0 350 120" className="w-full max-w-[400px] h-auto max-h-[100px] sm:max-h-[120px] mb-2 drop-shadow-sm shrink-0 bg-white rounded-md border border-gray-200">
+        <svg viewBox="0 0 380 120" className="w-full max-w-[400px] h-auto max-h-[140px] sm:max-h-[160px] mb-2 drop-shadow-sm shrink-0 bg-white rounded-md border border-gray-200">
           {beakersL}
           {beakersDL}
         </svg>
       );
     };
-    // --- ここまで ---
 
     const GradeBox = ({ grade, onClick }) => {
       const pinColors = ['', 'pin-blue', 'pin-yellow', 'pin-green', '', 'pin-blue'];
@@ -1011,6 +1008,11 @@
       const [fractionInput, setFractionInput] = useState({ num: '', den: '' });
       const [timeInput, setTimeInput] = useState({ h: '', m: '' }); 
       const [remainderInput, setRemainderInput] = useState({ q: '', r: '' }); 
+      
+      // --- 追加箇所：複合単位用のステート ---
+      const [mixedInput, setMixedInput] = useState({ u1: '', u2: '' });
+      const u1InputRef = useRef(null);
+      const u2InputRef = useRef(null);
       
       const [feedback, setFeedback] = useState(null);
       const [errorMessage, setErrorMessage] = useState('');
@@ -1068,11 +1070,12 @@
       };
 
       const resetQuestionState = (nextIndex = currentIndex, qList = questions) => {
-        setFeedback(null); setErrorMessage(''); setUserInput(''); setFractionInput({ num: '', den: '' }); setTimeInput({ h: '', m: '' }); setRemainderInput({ q: '', r: '' }); clearCanvas();
+        setFeedback(null); setErrorMessage(''); setUserInput(''); setFractionInput({ num: '', den: '' }); setTimeInput({ h: '', m: '' }); setRemainderInput({ q: '', r: '' }); setMixedInput({ u1: '', u2: '' }); clearCanvas();
         const nextQ = qList[nextIndex];
         let nextMode = 'normal';
         if (nextQ && nextQ.isRemainder) nextMode = 'remainder';
         else if (nextQ && nextQ.isFractionUnit) nextMode = 'fraction';
+        else if (nextQ && nextQ.isMixedUnit) nextMode = 'mixed';
         else if (nextQ && (nextQ.a.includes(':') || nextQ.timeMode)) nextMode = 'time';
         setInputMode(nextMode);
         
@@ -1080,6 +1083,7 @@
           if (nextMode === 'fraction') numInputRef.current?.focus();
           else if (nextMode === 'time') hourInputRef.current?.focus();
           else if (nextMode === 'remainder') quoInputRef.current?.focus();
+          else if (nextMode === 'mixed') u1InputRef.current?.focus();
           else inputRef.current?.focus();
         }, 50);
       };
@@ -1100,6 +1104,12 @@
         setRemainderInput(p => ({...p, [f]: val}));
       };
 
+      const handleMixedChange = (f, v) => {
+        let val = v.replace(/[０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0)).replace(/[^\d]/g, '').slice(0, 3);
+        setMixedInput(p => ({...p, [f]: val}));
+        if (f === 'u1' && val.length === 2) u2InputRef.current?.focus();
+      };
+
       const checkAnswer = () => {
         const cur = questions[currentIndex];
         if (!cur) return;
@@ -1117,6 +1127,13 @@
           const [aH, aM] = cur.a.split(':').map(s => parseInt(s, 10));
           if (vH === aH && vM === aM) ok = true;
           else err = `こたえ：${aH}じ ${aM}ふん`;
+        } else if (inputMode === 'mixed') {
+          if (!mixedInput.u1 && !mixedInput.u2) return;
+          const v1 = parseInt(norm(mixedInput.u1) || '0', 10);
+          const v2 = parseInt(norm(mixedInput.u2) || '0', 10);
+          const [a1, a2] = cur.a.split(':').map(s => parseInt(s, 10));
+          if (v1 === a1 && v2 === a2) ok = true;
+          else err = `こたえ：${a1 > 0 ? a1 + cur.unit1 + ' ' : ''}${a2 > 0 ? a2 + cur.unit2 : (a1 === 0 ? '0' + cur.unit2 : '')}`;
         } else if (inputMode === 'remainder') {
           if (!remainderInput.q && !remainderInput.r) return;
           const userQ = norm(remainderInput.q);
@@ -1234,8 +1251,6 @@
               {cur && cur.isPieGraph && <PieGraph data={cur.graphData} />}
               {cur && cur.isBandGraph && <BandGraph data={cur.graphData} />}
               {cur && cur.isSymmetry && <SymmetryFigure data={cur.symmetryData} />}
-              
-              {/* 新しく追加した図形のコンポーネント */}
               {cur && cur.isScale && <ScaleFigure data={cur.scaleData} />}
               {cur && cur.isRuler && <RulerFigure data={cur.rulerData} />}
               {cur && cur.isVolume && <VolumeFigure data={cur.volumeData} />}
@@ -1262,6 +1277,15 @@
           <div className="w-full flex md:flex-col gap-2 sm:gap-3 relative z-10">
             {inputMode === 'time' ? (
               <div className="flex-1 w-full flex items-center justify-center py-2 px-1 rounded-xl border-2 border-gray-300 bg-white shadow-inner min-w-0"><div className="flex items-baseline justify-center gap-2 sm:gap-4"><input ref={hourInputRef} type="tel" inputMode="numeric" pattern="\d*" maxLength={2} value={timeInput.h} onChange={(e) => handleTimeChange('h', e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && feedback === null) minInputRef.current?.focus(); }} disabled={feedback !== null} className="w-16 sm:w-20 p-2 border-b-[3px] border-terracotta font-bold text-3xl sm:text-4xl text-center focus:outline-none focus:border-sage bg-transparent" placeholder="じ" /><span className="font-bold text-2xl sm:text-3xl text-bluegrey/80">じ</span><input ref={minInputRef} type="tel" inputMode="numeric" pattern="\d*" maxLength={2} value={timeInput.m} onChange={(e) => handleTimeChange('m', e.target.value)} onKeyDown={handleKeyDown} disabled={feedback !== null} className="w-16 sm:w-20 p-2 border-b-[3px] border-sage font-bold text-3xl sm:text-4xl text-center focus:outline-none focus:border-sage bg-transparent" placeholder="ふん" /><span className="font-bold text-2xl sm:text-3xl text-bluegrey/80">ふん</span></div></div>
+            ) : inputMode === 'mixed' ? (
+              <div className="flex-1 w-full flex items-center justify-center py-2 px-1 rounded-xl border-2 border-gray-300 bg-white shadow-inner min-w-0">
+                <div className="flex items-baseline justify-center gap-1 sm:gap-3">
+                  <input ref={u1InputRef} type="tel" inputMode="numeric" pattern="\d*" maxLength={3} value={mixedInput.u1} onChange={(e) => handleMixedChange('u1', e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && feedback === null) u2InputRef.current?.focus(); }} disabled={feedback !== null} className="w-16 sm:w-20 p-2 border-b-[3px] border-terracotta font-bold text-3xl sm:text-4xl text-center focus:outline-none focus:border-sage bg-transparent" placeholder="" />
+                  <span className="font-bold text-2xl sm:text-3xl text-bluegrey/80">{questions[currentIndex]?.unit1}</span>
+                  <input ref={u2InputRef} type="tel" inputMode="numeric" pattern="\d*" maxLength={3} value={mixedInput.u2} onChange={(e) => handleMixedChange('u2', e.target.value)} onKeyDown={handleKeyDown} disabled={feedback !== null} className="w-16 sm:w-20 p-2 border-b-[3px] border-sage font-bold text-3xl sm:text-4xl text-center focus:outline-none focus:border-sage bg-transparent" placeholder="" />
+                  <span className="font-bold text-2xl sm:text-3xl text-bluegrey/80">{questions[currentIndex]?.unit2}</span>
+                </div>
+              </div>
             ) : inputMode === 'fraction' ? (
               <div className="flex-1 w-full flex items-center justify-center p-2 rounded-xl border-2 border-gray-300 bg-white shadow-inner min-w-0"><div className="flex flex-col items-center gap-1 w-24"><input ref={numInputRef} type="tel" inputMode="numeric" pattern="\d*" maxLength={3} value={fractionInput.num} onChange={(e) => handleFractionChange('num', e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && feedback === null) denInputRef.current?.focus(); }} disabled={feedback !== null} className="w-full p-1 border-b-[3px] border-gray-400 font-bold text-3xl text-center focus:outline-none focus:border-sage bg-transparent" placeholder="分子" /><input ref={denInputRef} type="tel" inputMode="numeric" pattern="\d*" maxLength={3} value={fractionInput.den} onChange={(e) => handleFractionChange('den', e.target.value)} onKeyDown={handleKeyDown} disabled={feedback !== null} className="w-full p-1 font-bold text-3xl text-center focus:outline-none focus:border-sage bg-transparent" placeholder="分母" /></div></div>
             ) : inputMode === 'remainder' ? (
