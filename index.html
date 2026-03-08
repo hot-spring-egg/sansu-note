@@ -984,9 +984,60 @@
           else { const n = rand(3, 6); const names = ["", "", "", "正三角形", "正方形", "正五角形", "正六角形"]; return { q: `${names[n]} の\n対称の軸は 何本 ありますか。`, a: String(n), isSymmetry: true, symmetryData: { type: 'polygon', sides: n }, isHissan: false }; }
         }),
         "文字と式": () => generateUnique(() => {
-          const a = rand(2, 9), x = rand(2, 9);
-          return { q: `x × ${a} = y という 式があります。\nx が ${x} のとき、y はいくつですか。`, a: String(x * a), isHissan: false };
-        }),
+  const pattern = rand(1, 5);
+
+  if (pattern === 1) {
+    // パターン1: xに数値を代入してyを求める（基本・元のコード）
+    const a = rand(2, 9);
+    const x = rand(2, 9);
+    return { 
+      q: `x × ${a} ＝ y という 式が あります。\nx が ${x} のとき、y は いくつですか？`, 
+      a: String(x * a), 
+      isHissan: false 
+    };
+
+  } else if (pattern === 2) {
+    // パターン2: yがわかっているときにxを求める（逆算）
+    const a = rand(2, 9);
+    const x = rand(2, 9);
+    const y = x * a;
+    return { 
+      q: `x × ${a} ＝ y という 式が あります。\ny が ${y} のとき、x は いくつですか？`, 
+      a: String(x), 
+      isHissan: false 
+    };
+
+  } else if (pattern === 3) {
+    // パターン3: 文章題から正しい式を選ぶ（式の立式）
+    const a = rand(3, 9) * 10;
+    return { 
+      q: `1こ x 円の ケーキを 4こ 買って、\n${a}円の 箱に 入れてもらいました。\n全部の 代金を y 円とするとき、\n正しい 式は どれですか？\n1: x ＋ 4 ＋ ${a} ＝ y\n2: x × 4 ＋ ${a} ＝ y`, 
+      a: "2", 
+      isHissan: false 
+    };
+
+  } else if (pattern === 4) {
+    // パターン4: たし算の式での代入
+    const a = rand(10, 50);
+    const x = rand(20, 80);
+    return { 
+      q: `${a} ＋ x ＝ y という 式が あります。\nx が ${x} のとき、y は いくつですか？`, 
+      a: String(a + x), 
+      isHissan: false 
+    };
+
+  } else {
+    // パターン5: 図形の面積公式と文字の式（発展）
+    const a = rand(4, 9);
+    const x = rand(3, 8);
+    const y = a * x;
+    return { 
+      q: `たてが x cm、横が ${a}cm の\n長方形の 面積を y cm² とします。\n面積 y が ${y} のとき、\nたての 長さ x は 何cm ですか？`, 
+      a: String(x), 
+      isHissan: false 
+    };
+  }
+}),       
         "分数×整数、分数÷整数、分数×分数": () => generateUnique(() => {
           const type = rand(1, 3);
           if (type === 1) { const den = rand(3, 9); const num = rand(1, den - 1); const int = rand(2, 5); return { q: `${num}/${den} × ${int} =`, a: simplifyFraction(num * int, den), isHissan: false, isFractionUnit: true }; } 
@@ -1004,9 +1055,63 @@
           else { const a = rand(2, 5); const b = rand(2, 5); const m = rand(2, 4); if (a === b) return { q: `4 : 6 を 一番 かんたんな\n整数の比にすると 2 : x です。\nx は？`, a: "3", isHissan: false, isFractionUnit: true }; return { q: `${a * m} : ${b * m} を 一番 かんたんな\n整数の比にすると ${a} : x です。\nx は？`, a: String(b), isHissan: false, isFractionUnit: true }; }
         }),
         "拡大図と縮図": () => generateUnique(() => {
-          const scale = rand(1, 2) * 100; const realM = (scale / 100) * rand(2, 5);
-          return { q: `実際の長さが ${realM}m のものを、\n縮尺 1/${scale} の 縮図に 描くと、\n長さは 何cm になりますか。`, a: String((realM * 100) / scale), isHissan: true };
-        }),
+  const pattern = rand(1, 5);
+
+  if (pattern === 1) {
+    // パターン1: 実際の長さから縮図上の長さを求める（元のコード）
+    const scale = rand(1, 5) * 100;
+    const realM = (scale / 100) * rand(2, 6);
+    return {
+      q: `実際の 長さが ${realM}m のものを、\n縮尺 1/${scale} の 縮図に 描くと、\n長さは 何cm になりますか？`,
+      a: String((realM * 100) / scale),
+      isHissan: true
+    };
+
+  } else if (pattern === 2) {
+    // パターン2: 縮図上の長さから実際の長さを求める（単位変換あり）
+    const scale = [100, 200, 500, 1000][rand(0, 3)];
+    const mapCm = rand(2, 8);
+    // cm を m に直すため 100 で割る
+    const realM = (mapCm * scale) / 100;
+    return {
+      q: `縮尺 1/${scale} の 縮図で、\n長さが ${mapCm}cm の 直線は、\n実際の 長さは 何m ですか？`,
+      a: String(realM),
+      isHissan: true
+    };
+
+  } else if (pattern === 3) {
+    // パターン3: 実際の長さと縮図の長さから縮尺を求める
+    const scaleOptions = [100, 200, 500, 1000];
+    const scale = scaleOptions[rand(0, 3)];
+    const cm = rand(2, 5);
+    const m = (cm * scale) / 100;
+    return {
+      q: `実際の 長さが ${m}m のものを\n${cm}cm に 縮めて 描きました。\nこの 縮図の 縮尺は 1/いくつ ですか？\n（分母の 数字だけを 答えよう）`,
+      a: String(scale),
+      isHissan: true
+    };
+
+  } else if (pattern === 4) {
+    // パターン4: 角の大きさは拡大・縮小しても変わらない性質
+    const angle = rand(4, 12) * 10;
+    const times = rand(2, 4);
+    return {
+      q: `ある 三角形の ${times}倍の 拡大図を 描きます。\nもとの 三角形の 1つの 角が ${angle}度 のとき、\n拡大図の 対応する 角の 大きさは 何度 ですか？`,
+      a: String(angle),
+      isHissan: false
+    };
+
+  } else {
+    // パターン5: 拡大図の対応する辺の長さ
+    const cm = rand(3, 8);
+    const times = rand(2, 5);
+    return {
+      q: `辺の 長さが ${cm}cm の 四角形が あります。\nこの 四角形の ${times}倍の 拡大図を 描くと、\n対応する 辺の 長さは 何cm に なりますか？`,
+      a: String(cm * times),
+      isHissan: false
+    };
+  }
+}),
         "円の面積": () => generateUnique(() => {
           const r = rand(2, 5);
           return { q: `半径 ${r}cm の 円の 面積は\n何cm² ですか。(円周率 3.14)`, a: String(Math.round(r * r * 3.14 * 100) / 100), isHissan: true };
@@ -1016,9 +1121,62 @@
           return { q: `底面積が ${s}cm²、高さが ${h}cm の\n角柱の 体積は 何cm³ ですか。`, a: String(s * h), isHissan: true };
         }),
         "およその面積と体積": () => generateUnique(() => {
-          const w = rand(5, 10)*10, h = rand(5, 10)*10;
-          return { q: `だいたい 縦${h}m、横${w}m の\n長方形と みなすと、\nおよその 面積は 何m² ですか。`, a: String(w * h), isHissan: true };
-        }),
+  const pattern = rand(1, 5);
+
+  if (pattern === 1) {
+    // パターン1: 長方形とみなす面積（元のコードを調整）
+    const w = rand(5, 10) * 10;
+    const h = rand(5, 10) * 10;
+    return { 
+      q: `ある 森の 形を、\nだいたい たて${h}m、横${w}m の\n長方形と みなすと、\nおよその 面積は 何m² ですか？`, 
+      a: String(w * h), 
+      isHissan: true 
+    };
+
+  } else if (pattern === 2) {
+    // パターン2: 三角形とみなす面積
+    const b = rand(4, 9) * 10;
+    const h = rand(4, 9) * 10;
+    return { 
+      q: `ある 島の 形を、\n底辺${b}km、高さ${h}km の\n三角形と みなすと、\nおよその 面積は 何km² ですか？`, 
+      a: String((b * h) / 2), 
+      isHissan: true 
+    };
+
+  } else if (pattern === 3) {
+    // パターン3: 円とみなす面積
+    const r = rand(2, 5) * 10;
+    // 小数点の計算誤差を防ぐため、314をかけて100で割る処理にしています
+    const area = (r * r * 314) / 100;
+    return { 
+      q: `ある 湖の 形を、\n半径${r}m の 円と みなすと、\nおよその 面積は 何m² ですか？\n（円周率は 3.14 とします）`, 
+      a: String(area), 
+      isHissan: true 
+    };
+
+  } else if (pattern === 4) {
+    // パターン4: 直方体とみなす体積
+    const w = rand(2, 5) * 10;
+    const d = rand(2, 5) * 10;
+    const h = rand(3, 8) * 10;
+    return { 
+      q: `ある 大きな ビルを、\nたて${d}m、横${w}m、高さ${h}m の\n直方体と みなすと、\nおよその 体積は 何m³ ですか？`, 
+      a: String(w * d * h), 
+      isHissan: true 
+    };
+
+  } else {
+    // パターン5: 円柱とみなす体積
+    const r = rand(2, 5);
+    const h = rand(5, 10);
+    const volume = (r * r * h * 314) / 100;
+    return { 
+      q: `大きな 丸太（まるた）を、\n底面の 半径${r}m、長さ${h}m の\n円柱と みなすと、\nおよその 体積は 何m³ ですか？\n（円周率は 3.14 とします）`, 
+      a: String(volume), 
+      isHissan: true 
+    };
+  }
+}),        
         "比例と反比例": () => generateUnique(() => {
           const a = rand(2, 5), x1 = rand(2, 3), y1 = a * x1, x2 = rand(4, 6);
           return { q: `y は x に 比例しています。\nx が ${x1} のとき y は ${y1} です。\nx が ${x2} のとき、y はいくつですか。`, a: String(a * x2), isHissan: true };
