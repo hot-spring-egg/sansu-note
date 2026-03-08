@@ -109,16 +109,180 @@
       2: {
         "たし算のひっ算": () => generateUnique(() => { const a = rand(11, 99); const b = rand(11, 99); return { q: `${a} + ${b} =`, a: String(a+b), isHissan: true }; }),
         "ひき算のひっ算": () => generateUnique(() => { const a = rand(21, 99); const b = rand(11, a - 1); return { q: `${a} - ${b} =`, a: String(a-b), isHissan: true }; }),
-        "長さのたんい": () => generateUnique(() => { if (rand(1, 2) === 1) { const cm = rand(1, 9); return { q: `${cm}cm は 何mm？`, a: String(cm * 10), isHissan: false }; } else { const cm = rand(1, 9); const mm = rand(1, 9); return { q: `${cm}cm ${mm}mm は\n何mm？`, a: String(cm * 10 + mm), isHissan: false }; } }),
+        "長さのたんい": () => generateUnique(() => {
+  const pattern = rand(1, 5);
+
+  if (pattern === 1) {
+    // パターン1: cm から mm への変換（元のコード）
+    const cm = rand(1, 9);
+    return { 
+      q: `${cm}cm は 何mm？`, 
+      a: String(cm * 10), 
+      isHissan: false 
+    };
+
+  } else if (pattern === 2) {
+    // パターン2: cm と mm から mm への変換（元のコード）
+    const cm = rand(1, 9);
+    const mm = rand(1, 9);
+    return { 
+      q: `${cm}cm ${mm}mm は\n何mm？`, 
+      a: String(cm * 10 + mm), 
+      isHissan: false 
+    };
+
+  } else if (pattern === 3) {
+    // パターン3: mm から cm と mm への変換（逆変換）
+    const cm = rand(1, 9);
+    const mm = rand(1, 9);
+    const total = cm * 10 + mm;
+    return { 
+      q: `${total}mm は、\n${cm}cm と あと 何mm？`, 
+      a: String(mm), 
+      isHissan: false 
+    };
+
+  } else if (pattern === 4) {
+    // パターン4: SVGで定規を用いた長さ調べ
+    // 表示システム側で isRuler が true のとき、rulerDataの長さの線を定規の上に描画する想定です
+    const cm = rand(2, 8);
+    const mm = rand(1, 9);
+    return {
+      q: "ものさしで はかった 長さは\n何mm ですか？",
+      a: String(cm * 10 + mm),
+      isRuler: true,
+      rulerData: { cm: cm, mm: mm },
+      isHissan: false
+    };
+
+  } else {
+    // パターン5: 長さのたし算（文章題）
+    const cm = rand(2, 6);
+    const mm1 = rand(1, 5);
+    const mm2 = rand(1, 4);
+    return {
+      q: `${cm}cm ${mm1}mm の テープと、\n${mm2}mm の テープを つなぐと、\nぜんぶで 長さは 何mm に なる？`,
+      a: String(cm * 10 + mm1 + mm2),
+      isHissan: false
+    };
+  }
+}),
         "3けたの数": () => generateUnique(() => { if (rand(1, 2) === 1) { const h = rand(1, 9); const t = rand(0, 9); const o = rand(1, 9); return { q: `100を ${h}こ、10を ${t}こ、\n1を ${o}こ あつめた 数は？`, a: String(h*100 + t*10 + o), isHissan: false }; } else { const a = rand(1, 9) * 100; const b = rand(1, 9) * 10; return { q: `${a} と ${b} で\nいくつ？`, a: String(a+b), isHissan: false }; } }),
-        "水のかさのたんい": () => generateUnique(() => { const type = rand(1, 3); if (type === 1) { const l = rand(1, 9); return { q: `${l}L は 何dL？`, a: String(l * 10), isHissan: false }; } else if (type === 2) { const l = rand(1, 9); return { q: `${l}L は 何mL？`, a: String(l * 1000), isHissan: false }; } else { const dl = rand(1, 9); return { q: `${dl}dL は 何mL？`, a: String(dl * 100), isHissan: false }; } }),
+        "水のかさのたんい": () => generateUnique(() => {
+  const pattern = rand(1, 5);
+
+  if (pattern === 1) {
+    // パターン1: L から dL への変換（元のコード）
+    const l = rand(1, 9);
+    return { 
+      q: `${l}L は 何dL？`, 
+      a: String(l * 10), 
+      isHissan: false 
+    };
+
+  } else if (pattern === 2) {
+    // パターン2: L から mL への変換（元のコード）
+    const l = rand(1, 9);
+    return { 
+      q: `${l}L は 何mL？`, 
+      a: String(l * 1000), 
+      isHissan: false 
+    };
+
+  } else if (pattern === 3) {
+    // パターン3: dL から mL への変換（元のコード）
+    const dl = rand(1, 9);
+    return { 
+      q: `${dl}dL は 何mL？`, 
+      a: String(dl * 100), 
+      isHissan: false 
+    };
+
+  } else if (pattern === 4) {
+    // パターン4: SVG図を見て水のかさを答える
+    // 表示システム側で `isVolume: true` のときに、LのマスとdLのマスを描画する想定です
+    const l = rand(1, 3);
+    const dl = rand(1, 9);
+    return {
+      q: "水のかさは ぜんぶで\n何dL ですか？",
+      a: String(l * 10 + dl),
+      isVolume: true,
+      volumeData: { L: l, dL: dl },
+      isHissan: false
+    };
+
+  } else {
+    // パターン5: かさのたし算（文章題）
+    // 単位を揃えて計算する練習です
+    const l = rand(1, 3);
+    const dl1 = rand(1, 5);
+    const dl2 = rand(1, 4);
+    return {
+      q: `${l}L ${dl1}dL の 水に、\n${dl2}dL の 水を あわせると、\nぜんぶで 何dL に なりますか？`,
+      a: String(l * 10 + dl1 + dl2),
+      isHissan: false
+    };
+  }
+}),
         "時こくと時間": () => generateUnique(() => { const h = rand(1, 12); const m = rand(0, 59); return { q: "なんじ なんぷん？", a: `${h}:${m.toString().padStart(2, '0')}`, isClock: true, isHissan: false }; }),
         "計算のくふう": () => generateUnique(() => { const ones = rand(1, 9); const num1 = rand(1, 4) * 10 + ones; const num2 = rand(1, 4) * 10 + (10 - ones); const num3 = rand(11, 49); const arr = [num1, num2, num3].sort(() => Math.random() - 0.5); return { q: `くふうして けいさんしよう\n${arr[0]} + ${arr[1]} + ${arr[2]} =`, a: String(num1+num2+num3), isHissan: true }; }),
         "たし算とひき算のひっ算": () => generateUnique(() => { if (rand(0, 1) === 0) { const a = rand(100, 899); const b = rand(10, 99); return { q: `${a} + ${b} =`, a: String(a+b), isHissan: true }; } else { const a = rand(100, 199); const b = rand(10, 99); return { q: `${a} - ${b} =`, a: String(a-b), isHissan: true }; } }),
         "かけ算(1)": () => generateUnique(() => { const a = rand(2, 5); const b = rand(1, 9); return { q: `${a} × ${b} =`, a: String(a*b), isHissan: false }; }),
         "かけ算(2)": () => generateUnique(() => { const a = [1, 6, 7, 8, 9][rand(0, 4)]; const b = rand(1, 9); return { q: `${a} × ${b} =`, a: String(a*b), isHissan: false }; }),
         "4けたの数": () => generateUnique(() => { if (rand(1, 2) === 1) { const th = rand(1, 9); const h = rand(0, 9); const t = rand(0, 9); const o = rand(1, 9); return { q: `1000を ${th}こ、100を ${h}こ、\n10を ${t}こ、1を ${o}こ\nあつめた 数は？`, a: String(th*1000 + h*100 + t*10 + o), isHissan: false }; } else { const a = rand(1, 9) * 1000; const b = rand(1, 9) * 100; return { q: `${a} と ${b} で\nいくつ？`, a: String(a+b), isHissan: false }; } }),
-        "長いものの長さのたんい": () => generateUnique(() => { if (rand(1, 2) === 1) { const m = rand(1, 9); return { q: `${m}m は 何cm？`, a: String(m * 100), isHissan: false }; } else { const m = rand(1, 9); const cm = rand(1, 99); return { q: `${m}m ${cm}cm は\n何cm？`, a: String(m * 100 + cm), isHissan: false }; } }),
+        "長いものの長さのたんい": () => generateUnique(() => {
+  const pattern = rand(1, 5);
+
+  if (pattern === 1) {
+    // パターン1: m から cm への変換（元のコード）
+    const m = rand(1, 9);
+    return { 
+      q: `${m}m は 何cm？`, 
+      a: String(m * 100), 
+      isHissan: false 
+    };
+
+  } else if (pattern === 2) {
+    // パターン2: m と cm から cm への変換（元のコード）
+    const m = rand(1, 9);
+    const cm = rand(1, 99);
+    return { 
+      q: `${m}m ${cm}cm は\n何cm？`, 
+      a: String(m * 100 + cm), 
+      isHissan: false 
+    };
+
+  } else if (pattern === 3) {
+    // パターン3: cm から m への変換（ぴったり）
+    const m = rand(2, 9);
+    return {
+      q: `${m * 100}cm は\n何m？`,
+      a: String(m),
+      isHissan: false
+    };
+
+  } else if (pattern === 4) {
+    // パターン4: cm から m と cm への変換（cm部分を問う）
+    const m = rand(1, 9);
+    const cm = rand(1, 99);
+    const total = m * 100 + cm;
+    return {
+      q: `${total}cm は\n${m}m と 何cm？`,
+      a: String(cm),
+      isHissan: false
+    };
+
+  } else {
+    // パターン5: 長さのたし算（文章題）
+    const m = rand(1, 5);
+    const cm = rand(10, 90);
+    return {
+      q: `${m}m の ひも と\n${cm}cm の ひも を つなぐと、\nぜんぶで 何cm になる？`,
+      a: String(m * 100 + cm),
+      isHissan: false
+    };
+  }
+}),
         "たし算とひき算": () => generateUnique(() => { if (rand(1, 2) === 1) { const a = rand(10, 50); const b = rand(10, 50); return { q: `${a} より ${b} おおきい 数は？`, a: String(a+b), isHissan: true }; } else { const a = rand(30, 90); const b = rand(10, a-1); return { q: `${a} より ${b} ちいさい 数は？`, a: String(a-b), isHissan: true }; } }),
         "分数": () => generateUnique(() => { const den = [2, 3, 4, 8][rand(0, 3)]; return { q: `おなじ おおきさに ${den}つに\nわけたうちの１つを、\n分数で かくと？`, a: `1/${den}`, isHissan: false, isFractionUnit: true }; })
       },
@@ -134,7 +298,63 @@
         "かけ算の筆算(1)": () => generateUnique(() => { if (rand(1, 2) === 1) { const a = rand(11, 99); const b = rand(2, 9); return { q: `${a} × ${b} =`, a: String(a*b), isHissan: true }; } else { const a = rand(100, 999); const b = rand(2, 9); return { q: `${a} × ${b} =`, a: String(a*b), isHissan: true }; } }),
         "大きい数のわり算 / 分数とわり算": () => generateUnique(() => { if (rand(0, 1) === 0) { const b = rand(2, 6); return { q: `1m の テープを おなじ ながさに\n${b}つ に 分けた 1つ分は？\n(分数で こたえよう)`, a: `1/${b}`, isHissan: false, isFractionUnit: true }; } else { const b = rand(2, 9); const quo = rand(1, 9) * 10; const a = b * quo; return { q: `${a} ÷ ${b} =`, a: String(quo), isHissan: true }; } }),
         "小数": () => generateUnique(() => { if (rand(0, 1) === 0) { const a = rand(1, 50); const b = rand(1, 50); return { q: `${a/10} + ${b/10} =`, a: String((a+b)/10), isHissan: true }; } else { const a = rand(11, 99); const b = rand(1, a - 1); return { q: `${a/10} - ${b/10} =`, a: String((a-b)/10), isHissan: true }; } }),
-        "重さのたんいとはかり方": () => generateUnique(() => { const type = rand(1, 3); if (type === 1) { const kg = rand(1, 5); const g = rand(10, 990); return { q: `${kg}kg ${g}g は\n何g？`, a: String(kg*1000 + g), isHissan: true }; } else if (type === 2) { const kg = rand(1, 9); return { q: `${kg}kg は 何g？`, a: String(kg*1000), isHissan: false }; } else { const t = rand(1, 5); return { q: `${t}t は 何kg？`, a: String(t*1000), isHissan: false }; } }),
+        "重さのたんいとはかり方": () => generateUnique(() => {
+  const pattern = rand(1, 5);
+
+  if (pattern === 1) {
+    // パターン1: kg と g から g への変換（元のコード）
+    const kg = rand(1, 5);
+    const g = rand(10, 990);
+    return { 
+      q: `${kg}kg ${g}g は\n何g？`, 
+      a: String(kg * 1000 + g), 
+      isHissan: true 
+    };
+
+  } else if (pattern === 2) {
+    // パターン2: kg から g への変換（元のコード）
+    const kg = rand(1, 9);
+    return { 
+      q: `${kg}kg は 何g？`, 
+      a: String(kg * 1000), 
+      isHissan: false 
+    };
+
+  } else if (pattern === 3) {
+    // パターン3: t から kg への変換（元のコード）
+    const t = rand(1, 5);
+    return { 
+      q: `${t}t は 何kg？`, 
+      a: String(t * 1000), 
+      isHissan: false 
+    };
+
+  } else if (pattern === 4) {
+    // パターン4: はかりの読み取り（SVG描画用）
+    // 1kgはかりなどを想定し、グラム単位で目盛りを読む問題
+    const maxKg = 1;
+    const g = rand(1, 9) * 100 + rand(1, 9) * 10; // 110g 〜 990g
+    return {
+      q: "はかりの 針が さしている\n重さは 何g ですか？",
+      a: String(g),
+      isScale: true,
+      scaleData: { maxKg: maxKg, g: g },
+      isHissan: false
+    };
+
+  } else {
+    // パターン5: 重さのたし算（文章題）
+    // 単位を揃えて計算する練習です
+    const kg = rand(1, 3);
+    const g1 = rand(100, 500);
+    const g2 = rand(100, 400);
+    return {
+      q: `${kg}kg ${g1}g の ランドセルに\n${g2}g の 本を 入れました。\nぜんぶで 何g に なりますか？`,
+      a: String(kg * 1000 + g1 + g2),
+      isHissan: true
+    };
+  }
+}),
         "分数": () => generateUnique(() => { const isAdd = rand(0, 1) === 0; const den = rand(3, 9); if (isAdd) { const a = rand(1, den - 1); const b = rand(1, den - a); return { q: `${a}/${den} + ${b}/${den} =`, a: `${a+b}/${den}`, isHissan: false, isFractionUnit: true }; } else { const a = rand(2, den); const b = rand(1, a - 1); if (a === den && rand(0, 1) === 0) { return { q: `1 - ${b}/${den} =`, a: `${den-b}/${den}`, isHissan: false, isFractionUnit: true }; } else { return { q: `${a}/${den} - ${b}/${den} =`, a: `${a-b}/${den}`, isHissan: false, isFractionUnit: true }; } } }),
         "□を使った式": () => generateUnique(() => { const a = rand(1, 50); const b = rand(a+1, 99); if (rand(1, 2) === 1) { return { q: `□ + ${a} = ${b}\n□は いくつ？`, a: String(b-a), isHissan: true }; } else { return { q: `${b} - □ = ${a}\n□は いくつ？`, a: String(b-a), isHissan: true }; } }),
         "かけ算の筆算(2)": () => generateUnique(() => { const a = rand(11, 99); const b = rand(11, 99); return { q: `${a} × ${b} =`, a: String(a*b), isHissan: true }; }),
@@ -525,7 +745,66 @@
 })
       },
       5: {
-        "整数と小数": () => generateUnique(() => { const type = rand(1, 2); if (type === 1) { const a = rand(11, 999) / 100; const m = rand(1, 2) === 1 ? 10 : 100; return { q: `${a} を ${m}倍した\n数は いくつですか？`, a: String(Math.round(a * m * 100)/100), isHissan: false }; } else { const a = rand(11, 999) / 10; const m = rand(1, 2) === 1 ? 10 : 100; return { q: `${a} を 1/${m} にした\n数は いくつですか？`, a: String(Math.round(a / m * 1000)/1000), isHissan: false }; } }),
+       "整数と小数": () => generateUnique(() => {
+  const pattern = rand(1, 5);
+
+  if (pattern === 1) {
+    // パターン1: 10倍、100倍した数（元のコード）
+    const a = rand(11, 999) / 100; // 0.11 〜 9.99
+    const m = rand(1, 2) === 1 ? 10 : 100;
+    // 浮動小数点計算の誤差を防ぐための丸め処理
+    const ans = Math.round(a * m * 100) / 100;
+    return { 
+      q: `${a} を ${m}倍した\n数は いくつですか？`, 
+      a: String(ans), 
+      isHissan: false 
+    };
+
+  } else if (pattern === 2) {
+    // パターン2: 1/10、1/100にした数（元のコード）
+    const a = rand(11, 999) / 10; // 1.1 〜 99.9
+    const m = rand(1, 2) === 1 ? 10 : 100;
+    const ans = Math.round((a / m) * 1000) / 1000;
+    return { 
+      q: `${a} を 1/${m} にした\n数は いくつですか？`, 
+      a: String(ans), 
+      isHissan: false 
+    };
+
+  } else if (pattern === 3) {
+    // パターン3: 0.001を単位とした構成
+    const count = rand(15, 999);
+    return {
+      q: `0.001 を ${count}こ あつめた\n数は いくつですか？`,
+      a: String(count / 1000),
+      isHissan: false
+    };
+
+  } else if (pattern === 4) {
+    // パターン4: 小数の相対的な大きさ（いくつ集めた数か）
+    const num = rand(1, 9) + rand(1, 9) / 10 + rand(1, 9) / 100; // 1.11 〜 9.99
+    const cleanNum = Math.round(num * 100) / 100;
+    const count = Math.round(cleanNum * 100);
+    return {
+      q: `${cleanNum} は 0.01 を\n何こ あつめた 数ですか？`,
+      a: String(count),
+      isHissan: false
+    };
+
+  } else {
+    // パターン5: 小数点のうつり方の規則性
+    const isMultiply = rand(0, 1) === 0;
+    const multiplier = rand(1, 2) === 1 ? 10 : 100;
+    const digits = multiplier === 10 ? "1" : "2";
+    const word = isMultiply ? `${multiplier}倍に する` : `1/${multiplier}に する`;
+    
+    return {
+      q: `小数を ${word}と、\n小数点は どちらに 何けた\nうつりますか？\n1: 右に ${digits}けた\n2: 左に ${digits}けた`,
+      a: isMultiply ? "1" : "2",
+      isHissan: false
+    };
+  }
+}),
         "直方体や立方体の体積": () => generateUnique(() => {
   const pattern = rand(1, 5);
 
