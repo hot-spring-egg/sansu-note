@@ -139,10 +139,8 @@
           }
         }),
         "3けたの数": () => generateUnique(() => { if (rand(1, 2) === 1) { const h = rand(1, 9); const t = rand(0, 9); const o = rand(1, 9); return { q: `100を ${h}こ、10を ${t}こ、\n1を ${o}こ あつめた 数は？`, a: String(h*100 + t*10 + o), isHissan: false }; } else { const a = rand(1, 9) * 100; const b = rand(1, 9) * 10; return { q: `${a} と ${b} で\nいくつ？`, a: String(a+b), isHissan: false }; } }),
-        
-        // --- 修正箇所：水のかさの問題バリエーション追加 ---
         "水のかさのたんい": () => generateUnique(() => {
-          const pattern = rand(1, 6); // 1パターン増やしました
+          const pattern = rand(1, 6);
           if (pattern === 1) {
             const l = rand(1, 9);
             return { q: `${l}L は 何dL？`, a: String(l * 10), isHissan: false };
@@ -163,7 +161,6 @@
               isHissan: false
             };
           } else if (pattern === 5) {
-            // パターン5: LとdLの足し算（画像のような複合単位の計算）
             if (rand(0, 1) === 0) {
               const l = rand(1, 5); const dl1 = rand(1, 8); const dl2 = rand(1, 9 - dl1);
               return { q: `${l}L ${dl1}dL ＋ ${dl2}dL ＝`, a: `${l}:${dl1 + dl2}`, isMixedUnit: true, unit1: "L", unit2: "dL", isHissan: false };
@@ -172,7 +169,6 @@
               return { q: `${l1}L ${dl}dL ＋ ${l2}L ＝`, a: `${l1 + l2}:${dl}`, isMixedUnit: true, unit1: "L", unit2: "dL", isHissan: false };
             }
           } else {
-            // パターン6: LとdLの引き算（画像のような複合単位の計算）
             if (rand(0, 1) === 0) {
               const l1 = rand(3, 8); const dl = rand(1, 9); const l2 = rand(1, l1 - 1);
               return { q: `${l1}L ${dl}dL － ${l2}L ＝`, a: `${l1 - l2}:${dl}`, isMixedUnit: true, unit1: "L", unit2: "dL", isHissan: false };
@@ -182,8 +178,6 @@
             }
           }
         }),
-        // ---------------------------------------------
-
         "時こくと時間": () => generateUnique(() => {
           const pattern = rand(1, 5);
           if (pattern === 1) {
@@ -909,34 +903,48 @@
       );
     };
 
+    // --- 修正箇所：定規の目盛りとテープをピッタリ合わせ、テープを太くしました ---
     const RulerFigure = ({ data }) => {
       if (!data) return null;
       const ticks = [];
+      const startX = 30; // 定規の左端の余白
+      
       for (let i = 0; i <= 80; i++) {
-        const x = 20 + i * 3;
-        let tickHeight = 5;
-        if (i % 10 === 0) tickHeight = 15;
-        else if (i % 5 === 0) tickHeight = 10;
-        ticks.push(<line key={`rtick${i}`} x1={x} y1="60" x2={x} y2={60 + tickHeight} stroke="#333" strokeWidth="1" />);
+        const x = startX + i * 3;
+        let tickHeight = 8;
+        if (i % 10 === 0) tickHeight = 20;
+        else if (i % 5 === 0) tickHeight = 14;
+        
+        // 目盛りを y=45 から下へ向かって描画
+        ticks.push(<line key={`rtick${i}`} x1={x} y1="45" x2={x} y2={45 + tickHeight} stroke="#333" strokeWidth="1" />);
+        
+        // 1cmごとに数字をつける
         if (i % 10 === 0) {
           const label = i / 10;
-          ticks.push(<text key={`rlabel${i}`} x={x} y="92" fontSize="14" textAnchor="middle" fill="#333">{label}</text>);
+          ticks.push(<text key={`rlabel${i}`} x={x} y="82" fontSize="16" textAnchor="middle" fill="#333" fontWeight="bold">{label}</text>);
         }
       }
-      const lineEndX = 20 + data.cm * 30 + data.mm * 3;
+      
+      const lineEndX = startX + data.cm * 30 + data.mm * 3;
 
       return (
         <svg viewBox="0 0 300 100" className="w-full max-w-[400px] h-auto max-h-[100px] sm:max-h-[120px] mb-2 drop-shadow-sm shrink-0 bg-white rounded-md border border-gray-200">
-          <line x1="20" y1="60" x2="280" y2="60" stroke="#333" strokeWidth="1" />
+          {/* 定規の上端（横線） */}
+          <line x1={startX} y1="45" x2={startX + 240} y2="45" stroke="#333" strokeWidth="1.5" />
+          
           {ticks}
-          <line x1="20" y1="40" x2={lineEndX} y2="40" stroke="#5D9CEC" strokeWidth="6" strokeLinecap="butt" />
-          <line x1="20" y1="35" x2="20" y2="45" stroke="#5D9CEC" strokeWidth="2" />
-          <line x1={lineEndX} y1="35" x2={lineEndX} y2="45" stroke="#5D9CEC" strokeWidth="2" />
+          
+          {/* 左端の補助点線（テープから目盛りへ） */}
+          <line x1={startX} y1="20" x2={startX} y2="45" stroke="#94a3b8" strokeWidth="2" strokeDasharray="3,2" />
+          {/* 右端の補助点線（赤い点線で注目しやすく） */}
+          <line x1={lineEndX} y1="20" x2={lineEndX} y2="45" stroke="#E07A5F" strokeWidth="2" strokeDasharray="3,2" />
+
+          {/* 青いテープ（太さを14にアップし、定規のすぐ上に配置） */}
+          <line x1={startX} y1="28" x2={lineEndX} y2="28" stroke="#5D9CEC" strokeWidth="14" strokeLinecap="butt" />
         </svg>
       );
     };
 
-    // --- 修正箇所：ビーカーの大きさを全体的に拡大しました ---
     const VolumeFigure = ({ data }) => {
       if (!data) return null;
       
@@ -1009,7 +1017,6 @@
       const [timeInput, setTimeInput] = useState({ h: '', m: '' }); 
       const [remainderInput, setRemainderInput] = useState({ q: '', r: '' }); 
       
-      // --- 追加箇所：複合単位用のステート ---
       const [mixedInput, setMixedInput] = useState({ u1: '', u2: '' });
       const u1InputRef = useRef(null);
       const u2InputRef = useRef(null);
