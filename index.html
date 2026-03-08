@@ -221,7 +221,72 @@
         "分数": () => generateUnique(() => { const den = rand(4, 9); if (rand(0, 1) === 0) { const a = rand(1, den-1); const b = rand(1, den-a); return { q: `${a}/${den} + ${b}/${den} =`, a: (a+b === den) ? "1" : `${a+b}/${den}`, isHissan: false, isFractionUnit: true }; } else { const a = rand(2, den-1); const b = rand(1, a-1); return { q: `${a}/${den} - ${b}/${den} =`, a: `${a-b}/${den}`, isHissan: false, isFractionUnit: true }; } }),
         "面積のくらべ方と表し方": () => generateUnique(() => { const w = rand(2, 9); const h = rand(2, 9); return { q: "この 四角形の 面積は\n何cm²？", a: String(w * h), isArea: true, areaData: { w, h }, isHissan: true }; }),
         "小数のかけ算とわり算": () => generateUnique(() => { if (rand(0, 1) === 0) { const a = rand(11, 49); const b = rand(2, 9); return { q: `${a/10} × ${b} =`, a: String((a*b)/10), isHissan: true }; } else { const b = rand(2, 9); const quo = rand(11, 49); const a = b * quo; return { q: `${a/10} ÷ ${b} =`, a: String(quo/10), isHissan: true }; } }),
-        "直方体と立方体": () => generateUnique(() => { const type = rand(1, 3); const solidType = rand(0, 1) === 0 ? 'cube' : 'cuboid'; const shapeName = solidType === 'cube' ? '立方体' : '直方体'; if (type === 1) { return { q: `この ${shapeName}の\n面の 数は いくつ？`, a: "6", isSolid: true, solidData: { type: solidType }, isHissan: false }; } else if (type === 2) { return { q: `この ${shapeName}の\n辺の 数は いくつ？`, a: "12", isSolid: true, solidData: { type: solidType }, isHissan: false }; } else { return { q: `この ${shapeName}の 頂点の\n数は いくつ？`, a: "8", isSolid: true, solidData: { type: solidType }, isHissan: false }; } })
+        "直方体と立方体": () => generateUnique(() => {
+  const pattern = rand(1, 5);
+  const solidType = rand(0, 1) === 0 ? 'cube' : 'cuboid';
+  const shapeName = solidType === 'cube' ? '立方体' : '直方体';
+
+  if (pattern === 1) {
+    // パターン1: 面の数
+    return { 
+      q: `この ${shapeName}の\n面の 数は いくつ？`, 
+      a: "6", 
+      isSolid: true, 
+      solidData: { type: solidType }, 
+      isHissan: false 
+    };
+
+  } else if (pattern === 2) {
+    // パターン2: 辺の数
+    return { 
+      q: `この ${shapeName}の\n辺の 数は いくつ？`, 
+      a: "12", 
+      isSolid: true, 
+      solidData: { type: solidType }, 
+      isHissan: false 
+    };
+
+  } else if (pattern === 3) {
+    // パターン3: 頂点の数
+    return { 
+      q: `この ${shapeName}の 頂点の\n数は いくつ？`, 
+      a: "8", 
+      isSolid: true, 
+      solidData: { type: solidType }, 
+      isHissan: false 
+    };
+
+  } else if (pattern === 4) {
+    // パターン4: 面の形や合同についての性質
+    if (solidType === 'cube') {
+      return {
+        q: `立方体の 6つの 面は\nすべて どんな 形ですか？\n1: 長方形\n2: 正方形`,
+        a: "2",
+        isSolid: true,
+        solidData: { type: 'cube' },
+        isHissan: false
+      };
+    } else {
+      return {
+        q: `直方体の 向きあう 面は\nどんな 関係ですか？\n1: ぴったり 重なる（合同）\n2: 違う 大きさ`,
+        a: "1",
+        isSolid: true,
+        solidData: { type: 'cuboid' },
+        isHissan: false
+      };
+    }
+
+  } else {
+    // パターン5: 平行な面の組数
+    return {
+      q: `この ${shapeName}には、\n平行な 面の 組が\nいくつ ありますか？`,
+      a: "3",
+      isSolid: true,
+      solidData: { type: solidType },
+      isHissan: false
+    };
+  }
+})
       },
       5: {
         "整数と小数": () => generateUnique(() => { const type = rand(1, 2); if (type === 1) { const a = rand(11, 999) / 100; const m = rand(1, 2) === 1 ? 10 : 100; return { q: `${a} を ${m}倍した\n数は いくつですか？`, a: String(Math.round(a * m * 100)/100), isHissan: false }; } else { const a = rand(11, 999) / 10; const m = rand(1, 2) === 1 ? 10 : 100; return { q: `${a} を 1/${m} にした\n数は いくつですか？`, a: String(Math.round(a / m * 1000)/1000), isHissan: false }; } }),
@@ -488,7 +553,81 @@
   }
 }),
         "分数のたし算とひき算": () => generateUnique(() => { const dens = [ [2,3,6], [2,4,4], [3,4,12], [2,5,10], [3,5,15] ]; const [d1, d2, lcm] = dens[rand(0, dens.length-1)]; const isAdd = rand(0, 1) === 0; let n1 = rand(1, d1-1), n2 = rand(1, d2-1); if (!isAdd && n1*lcm/d1 <= n2*lcm/d2) { n1 = d1 - 1; n2 = 1; } const numAns = isAdd ? n1*(lcm/d1) + n2*(lcm/d2) : n1*(lcm/d1) - n2*(lcm/d2); return { q: `${n1}/${d1} ${isAdd?'+':'-'} ${n2}/${d2} =`, a: simplifyFraction(numAns, lcm), isHissan: true, isFractionUnit: true }; }),
-        "平均": () => generateUnique(() => { const a = rand(10, 50); const b = rand(10, 50); const c = rand(10, 50); const sum = a + b + c; if (sum % 3 === 0) { return { q: `${a}、${b}、${c} の\n平均は いくつですか？`, a: String(sum / 3), isHissan: true }; } else { const d = sum + (3 - sum%3); const newC = d - a - b; return { q: `${a}、${b}、${newC} の\n平均は いくつですか？`, a: String(d / 3), isHissan: true }; } }),
+        "平均": () => generateUnique(() => {
+  const pattern = rand(1, 5);
+
+  if (pattern === 1) {
+    // パターン1: 3つの数の平均（基本・元のコードを調整）
+    const a = rand(10, 50);
+    const b = rand(10, 50);
+    const sumBase = a + b + rand(10, 50);
+    const remainder = sumBase % 3;
+    const c = (sumBase - a - b) + (remainder === 0 ? 0 : 3 - remainder);
+    const sum = a + b + c;
+    
+    return { 
+      q: `${a}、${b}、${c} の\n平均は いくつですか？`, 
+      a: String(sum / 3), 
+      isHissan: true 
+    };
+
+  } else if (pattern === 2) {
+    // パターン2: 測定したデータ（4つ）から平均を求める
+    const base = rand(2, 5) * 10;
+    const a = base + rand(-5, 5);
+    const b = base + rand(-5, 5);
+    const c = base + rand(-5, 5);
+    const dBase = base + rand(-5, 5);
+    const sumBase = a + b + c + dBase;
+    const remainder = sumBase % 4;
+    const d = dBase + (remainder === 0 ? 0 : 4 - remainder);
+    const sum = a + b + c + d;
+    
+    return { 
+      q: `4人の 体重は それぞれ\n${a}kg、${b}kg、${c}kg、${d}kg です。\n平均は 何kg ですか？`, 
+      a: String(sum / 4), 
+      isHissan: true 
+    };
+
+  } else if (pattern === 3) {
+    // パターン3: 平均から全体量を求める（逆算）
+    const count = rand(4, 8);
+    const avg = rand(15, 30) * 10;
+    
+    return { 
+      q: `りんご ${count}この 平均の 重さは\n${avg}g です。\n全部の 重さは 何g ですか？`, 
+      a: String(avg * count), 
+      isHissan: true 
+    };
+
+  } else if (pattern === 4) {
+    // パターン4: 0を含むデータの平均（つまずきやすいポイント）
+    const a = rand(10, 40);
+    const b = rand(10, 40);
+    const dBase = rand(10, 40);
+    const sumBase = a + b + 0 + dBase;
+    const remainder = sumBase % 4;
+    const d = dBase + (remainder === 0 ? 0 : 4 - remainder);
+    const sum = a + b + 0 + d;
+    
+    return { 
+      q: `4回の ゲームの 得点は、\n${a}点、${b}点、0点、${d}点 でした。\n1回あたりの 平均は 何点ですか？`, 
+      a: String(sum / 4), 
+      isHissan: true 
+    };
+
+  } else {
+    // パターン5: 日数と平均から全体量を求める応用
+    const avg = rand(10, 25);
+    const days = rand(5, 14);
+    
+    return {
+      q: `${days}日間の 読んだ 本の ページ数の\n平均が 1日 ${avg}ページ でした。\n${days}日間で 全部で 何ページ 読みましたか？`,
+      a: String(avg * days),
+      isHissan: true
+    };
+  }
+}),
         "単位量あたりの大きさ": () => generateUnique(() => {
   const pattern = rand(1, 5);
   
