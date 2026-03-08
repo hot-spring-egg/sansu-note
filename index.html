@@ -67,14 +67,12 @@
     const rand = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
     const gcd = (a, b) => b === 0 ? a : gcd(b, a % b);
 
-    // 修正箇所：重複判定を「問題文（q.q）」だけではなく「問題データ全体」で行うように変更
     const generateUnique = (createFn, maxCount = 10, maxAttempts = 200) => {
       const qList = [];
       const seen = new Set();
       let attempts = 0;
       while (qList.length < maxCount && attempts < maxAttempts) {
         const q = createFn();
-        // オブジェクト全体を文字列化してキーにすることで、時計のように問題文が同じでも答えが違う問題を別物として扱います
         const uniqueKey = JSON.stringify(q);
         if (!seen.has(uniqueKey)) {
           seen.add(uniqueKey);
@@ -98,7 +96,7 @@
         "あわせていくつ ふえるといくつ": () => generateUnique(() => { const a = rand(1, 9); const b = rand(1, 10 - a); return { q: `${a} + ${b} =`, a: String(a+b), isHissan: false }; }),
         "のこりはいくつ ちがいはいくつ": () => generateUnique(() => { const a = rand(2, 10); const b = rand(1, a - 1); return { q: `${a} - ${b} =`, a: String(a-b), isHissan: false }; }),
         "10よりおおきいかず": () => generateUnique(() => { if (rand(1, 2) === 1) { const b = rand(1, 9); return { q: `10 と ${b} で いくつ？`, a: String(10+b), isHissan: false }; } else { const ans = rand(11, 19); return { q: `${ans} は\n10 と いくつ？`, a: String(ans-10), isHissan: false }; } }),
-        "なんじなんじはん": () => generateUnique(() => { const h = rand(1, 12); const m = rand(0, 1) === 0 ? 0 : 30; return { q: "なんじ なんぷん？", a: `${h}:${m === 0 ? '00' : '30'}`, isClock: true, isHissan: false }; }),
+        
         "3つのかずのけいさん": () => generateUnique(() => { const type = rand(1, 3); if (type === 1) { const a = rand(1, 5); const b = rand(1, 5); const c = rand(1, 5); return { q: `${a} + ${b} + ${c} =`, a: String(a+b+c), isHissan: false }; } else if (type === 2) { const a = rand(6, 15); const b = rand(1, a-2); const c = rand(1, a-b-1); return { q: `${a} - ${b} - ${c} =`, a: String(a-b-c), isHissan: false }; } else { const a = rand(1, 8); const b = rand(1, 9); const c = rand(1, a+b-1); return { q: `${a} + ${b} - ${c} =`, a: String(a+b-c), isHissan: false }; } }),
         "くりあがりのあるたしざん": () => generateUnique(() => { const a = rand(2, 9); const b = rand(11 - a, 9); return { q: `${a} + ${b} =`, a: String(a+b), isHissan: false }; }),
         "くりさがりのあるひきざん": () => generateUnique(() => { const a = rand(11, 18); const b = rand(Math.max(2, a - 9), 9); return { q: `${a} - ${b} =`, a: String(a-b), isHissan: false }; }),
@@ -110,304 +108,137 @@
         "たし算のひっ算": () => generateUnique(() => { const a = rand(11, 99); const b = rand(11, 99); return { q: `${a} + ${b} =`, a: String(a+b), isHissan: true }; }),
         "ひき算のひっ算": () => generateUnique(() => { const a = rand(21, 99); const b = rand(11, a - 1); return { q: `${a} - ${b} =`, a: String(a-b), isHissan: true }; }),
         "長さのたんい": () => generateUnique(() => {
-  const pattern = rand(1, 5);
-
-  if (pattern === 1) {
-    const cm = rand(1, 9);
-    return { q: `${cm}cm は 何mm？`, a: String(cm * 10), isHissan: false };
-  } else if (pattern === 2) {
-    const cm = rand(1, 9);
-    const mm = rand(1, 9);
-    return { q: `${cm}cm ${mm}mm は\n何mm？`, a: String(cm * 10 + mm), isHissan: false };
-  } else if (pattern === 3) {
-    const cm = rand(1, 9);
-    const mm = rand(1, 9);
-    const total = cm * 10 + mm;
-    return { q: `${total}mm は、\n${cm}cm と あと 何mm？`, a: String(mm), isHissan: false };
-  } else if (pattern === 4) {
-    // 問題用の長さを生成（2cm1mm 〜 7cm9mm）
-    const cm = rand(2, 7);
-    const mm = rand(1, 9);
-    const totalMm = cm * 10 + mm;
-
-    // SVGタグを直接文字列として組み立てる
-    let svg = `<svg viewBox="0 0 300 100" width="100%" height="100" style="display:block; margin: 10px auto;">`;
-    
-    // ものさしの横線
-    svg += `<line x1="20" y1="60" x2="280" y2="60" stroke="#333" stroke-width="1" />`;
-
-    // 目盛りと数字の描画（1mm = 3px で計算、8cm分まで描画）
-    for (let i = 0; i <= 80; i++) {
-      const x = 20 + i * 3;
-      let tickHeight = 5; // 1mm単位の短い線
-      if (i % 10 === 0) tickHeight = 15; // 1cm単位の長い線
-      else if (i % 5 === 0) tickHeight = 10; // 5mm単位の中くらいの線
-
-      svg += `<line x1="${x}" y1="60" x2="${x}" y2="${60 + tickHeight}" stroke="#333" stroke-width="1" />`;
-
-      // 1cmごとに数字をつける
-      if (i % 10 === 0) {
-        const label = i / 10;
-        svg += `<text x="${x}" y="92" font-size="14" text-anchor="middle" fill="#333">${label}</text>`;
-      }
-    }
-
-    // はかる対象の青い線
-    const lineEndX = 20 + cm * 30 + mm * 3;
-    svg += `<line x1="20" y1="40" x2="${lineEndX}" y2="40" stroke="#5D9CEC" stroke-width="6" stroke-linecap="butt" />`;
-    svg += `</svg>`;
-
-    return {
-      // 答えの入力形式をシンプルにするため、すべてmmで答えさせます
-      q: `青い 線（せん）の 長さは\nぜんぶで 何mm ですか？\n${svg}`,
-      a: String(totalMm),
-      isHissan: false
-    };
-  } else {
-    const cm = rand(2, 6);
-    const mm1 = rand(1, 5);
-    const mm2 = rand(1, 4);
-    return {
-      q: `${cm}cm ${mm1}mm の テープと、\n${mm2}mm の テープを つなぐと、\nぜんぶで 長さは 何mm に なる？`,
-      a: String(cm * 10 + mm1 + mm2),
-      isHissan: false
-    };
-  }
-}),
+          const pattern = rand(1, 5);
+          if (pattern === 1) {
+            const cm = rand(1, 9);
+            return { q: `${cm}cm は 何mm？`, a: String(cm * 10), isHissan: false };
+          } else if (pattern === 2) {
+            const cm = rand(1, 9);
+            const mm = rand(1, 9);
+            return { q: `${cm}cm ${mm}mm は\n何mm？`, a: String(cm * 10 + mm), isHissan: false };
+          } else if (pattern === 3) {
+            const cm = rand(1, 9);
+            const mm = rand(1, 9);
+            const total = cm * 10 + mm;
+            return { q: `${total}mm は、\n${cm}cm と あと 何mm？`, a: String(mm), isHissan: false };
+          } else if (pattern === 4) {
+            const cm = rand(2, 7);
+            const mm = rand(1, 9);
+            const totalMm = cm * 10 + mm;
+            return {
+              q: "青い 線（せん）の 長さは\nぜんぶで 何mm ですか？",
+              a: String(totalMm),
+              isRuler: true,
+              rulerData: { cm: cm, mm: mm },
+              isHissan: false
+            };
+          } else {
+            const cm = rand(2, 6);
+            const mm1 = rand(1, 5);
+            const mm2 = rand(1, 4);
+            return { q: `${cm}cm ${mm1}mm の テープと、\n${mm2}mm の テープを つなぐと、\nぜんぶで 長さは 何mm に なる？`, a: String(cm * 10 + mm1 + mm2), isHissan: false };
+          }
+        }),
         "3けたの数": () => generateUnique(() => { if (rand(1, 2) === 1) { const h = rand(1, 9); const t = rand(0, 9); const o = rand(1, 9); return { q: `100を ${h}こ、10を ${t}こ、\n1を ${o}こ あつめた 数は？`, a: String(h*100 + t*10 + o), isHissan: false }; } else { const a = rand(1, 9) * 100; const b = rand(1, 9) * 10; return { q: `${a} と ${b} で\nいくつ？`, a: String(a+b), isHissan: false }; } }),
         "水のかさのたんい": () => generateUnique(() => {
-  const pattern = rand(1, 5);
-
-  if (pattern === 1) {
-    const l = rand(1, 9);
-    return { q: `${l}L は 何dL？`, a: String(l * 10), isHissan: false };
-  } else if (pattern === 2) {
-    const l = rand(1, 9);
-    return { q: `${l}L は 何mL？`, a: String(l * 1000), isHissan: false };
-  } else if (pattern === 3) {
-    const dl = rand(1, 9);
-    return { q: `${dl}dL は 何mL？`, a: String(dl * 100), isHissan: false };
-  } else if (pattern === 4) {
-    // SVGの代わりに絵文字で視覚的にかさを表します
-    const l = rand(1, 3);
-    const dl = rand(1, 9);
-    const l_pict = "🪣".repeat(l);  // 1Lをバケツで表現
-    const dl_pict = "🥛".repeat(dl); // 1dLをコップで表現
-    return {
-      q: `【1L=🪣　1dL=🥛】\n\n${l_pict} ${dl_pict}\n\n水のかさは ぜんぶで 何dLですか？`,
-      a: String(l * 10 + dl),
-      isHissan: false
-    };
-  } else {
-    const l = rand(1, 3);
-    const dl1 = rand(1, 5);
-    const dl2 = rand(1, 4);
-    return {
-      q: `${l}L ${dl1}dL の 水に、\n${dl2}dL の 水を あわせると、\nぜんぶで 何dL に なりますか？`,
-      a: String(l * 10 + dl1 + dl2),
-      isHissan: false
-    };
-  }
-}),
+          const pattern = rand(1, 5);
+          if (pattern === 1) {
+            const l = rand(1, 9);
+            return { q: `${l}L は 何dL？`, a: String(l * 10), isHissan: false };
+          } else if (pattern === 2) {
+            const l = rand(1, 9);
+            return { q: `${l}L は 何mL？`, a: String(l * 1000), isHissan: false };
+          } else if (pattern === 3) {
+            const dl = rand(1, 9);
+            return { q: `${dl}dL は 何mL？`, a: String(dl * 100), isHissan: false };
+          } else if (pattern === 4) {
+            const l = rand(1, 3);
+            const dl = rand(1, 9);
+            return {
+              q: "水のかさは ぜんぶで\n何dL ですか？",
+              a: String(l * 10 + dl),
+              isVolume: true,
+              volumeData: { L: l, dL: dl },
+              isHissan: false
+            };
+          } else {
+            const l = rand(1, 3);
+            const dl1 = rand(1, 5);
+            const dl2 = rand(1, 4);
+            return { q: `${l}L ${dl1}dL の 水に、\n${dl2}dL の 水を あわせると、\nぜんぶで 何dL に なりますか？`, a: String(l * 10 + dl1 + dl2), isHissan: false };
+          }
+        }),
         "時こくと時間": () => generateUnique(() => {
-  const pattern = rand(1, 5);
-
-  if (pattern === 1) {
-    // パターン1: 時計の図を見て時刻を答える（元のコード）
-    // ※画面側で isClock: true を受けて時計を描画する前提
-    const h = rand(1, 12);
-    const m = rand(0, 59);
-    return { 
-      q: "なんじ なんぷん？", 
-      a: `${h}:${m.toString().padStart(2, '0')}`, 
-      isClock: true, 
-      clockData: { h: h, m: m }, // 念のためデータとしても渡しておきます
-      isHissan: false 
-    };
-
-  } else if (pattern === 2) {
-    // パターン2: 基本的な時間の単位関係
-    if (rand(1, 2) === 1) {
-      return { 
-        q: "1時間は 何分ですか？", 
-        a: "60", 
-        isHissan: false 
-      };
-    } else {
-      return { 
-        q: "1日は 何時間ですか？", 
-        a: "24", 
-        isHissan: false 
-      };
-    }
-
-  } else if (pattern === 3) {
-    // パターン3: 時間の変換（〇時間〇分 ＝ 〇分）
-    const h = rand(1, 2);
-    const m = rand(10, 50);
-    return { 
-      q: `${h}時間 ${m}分 は\n何分ですか？`, 
-      a: String(h * 60 + m), 
-      isHissan: false 
-    };
-
-  } else if (pattern === 4) {
-    // パターン4: かかった時間を求める
-    const h = rand(1, 10);
-    const m1 = rand(5, 20);
-    const m2 = rand(30, 50);
-    return { 
-      q: `本を 読みはじめた 時こくが\n${h}時 ${m1}分 でした。\n読みおわった 時こくは\n${h}時 ${m2}分 でした。\n本を 読んでいた 時間は 何分間ですか？`, 
-      a: String(m2 - m1), 
-      isHissan: false 
-    };
-
-  } else {
-    // パターン5: 〇分後の時刻を求める
-    const h = rand(1, 10);
-    const m = rand(10, 30);
-    const add = rand(10, 20);
-    const newM = m + add;
-    return { 
-      q: `${h}時 ${m}分 から\n${add}分 たった 時こくは\n何時 何分ですか？\n（「○:○○」の形で こたえよう）`, 
-      a: `${h}:${newM.toString().padStart(2, '0')}`, 
-      isHissan: false 
-    };
-  }
-}),
+          const pattern = rand(1, 5);
+          if (pattern === 1) {
+            const h = rand(1, 12); const m = rand(0, 59);
+            return { q: "なんじ なんぷん？", a: `${h}:${m.toString().padStart(2, '0')}`, isClock: true, clockData: { h: h, m: m }, isHissan: false };
+          } else if (pattern === 2) {
+            if (rand(1, 2) === 1) return { q: "1時間は 何分ですか？", a: "60", isHissan: false };
+            else return { q: "1日は 何時間ですか？", a: "24", isHissan: false };
+          } else if (pattern === 3) {
+            const h = rand(1, 2); const m = rand(10, 50);
+            return { q: `${h}時間 ${m}分 は\n何分ですか？`, a: String(h * 60 + m), isHissan: false };
+          } else if (pattern === 4) {
+            const h = rand(1, 10); const m1 = rand(5, 20); const m2 = rand(30, 50);
+            return { q: `本を 読みはじめた 時こくが\n${h}時 ${m1}分 でした。\n読みおわった 時こくは\n${h}時 ${m2}分 でした。\n本を 読んでいた 時間は 何分間ですか？`, a: String(m2 - m1), isHissan: false };
+          } else {
+            const h = rand(1, 10); const m = rand(10, 30); const add = rand(10, 20); const newM = m + add;
+            return { q: `${h}時 ${m}分 から\n${add}分 たった 時こくは\n何時 何分ですか？\n（「○:○○」の形で こたえよう）`, a: `${h}:${newM.toString().padStart(2, '0')}`, isHissan: false };
+          }
+        }),
         "計算のくふう": () => generateUnique(() => { const ones = rand(1, 9); const num1 = rand(1, 4) * 10 + ones; const num2 = rand(1, 4) * 10 + (10 - ones); const num3 = rand(11, 49); const arr = [num1, num2, num3].sort(() => Math.random() - 0.5); return { q: `くふうして けいさんしよう\n${arr[0]} + ${arr[1]} + ${arr[2]} =`, a: String(num1+num2+num3), isHissan: true }; }),
         "たし算とひき算のひっ算": () => generateUnique(() => { if (rand(0, 1) === 0) { const a = rand(100, 899); const b = rand(10, 99); return { q: `${a} + ${b} =`, a: String(a+b), isHissan: true }; } else { const a = rand(100, 199); const b = rand(10, 99); return { q: `${a} - ${b} =`, a: String(a-b), isHissan: true }; } }),
         "かけ算(1)": () => generateUnique(() => { const a = rand(2, 5); const b = rand(1, 9); return { q: `${a} × ${b} =`, a: String(a*b), isHissan: false }; }),
         "かけ算(2)": () => generateUnique(() => { const a = [1, 6, 7, 8, 9][rand(0, 4)]; const b = rand(1, 9); return { q: `${a} × ${b} =`, a: String(a*b), isHissan: false }; }),
         "4けたの数": () => generateUnique(() => { if (rand(1, 2) === 1) { const th = rand(1, 9); const h = rand(0, 9); const t = rand(0, 9); const o = rand(1, 9); return { q: `1000を ${th}こ、100を ${h}こ、\n10を ${t}こ、1を ${o}こ\nあつめた 数は？`, a: String(th*1000 + h*100 + t*10 + o), isHissan: false }; } else { const a = rand(1, 9) * 1000; const b = rand(1, 9) * 100; return { q: `${a} と ${b} で\nいくつ？`, a: String(a+b), isHissan: false }; } }),
         "長いものの長さのたんい": () => generateUnique(() => {
-  const pattern = rand(1, 5);
-
-  if (pattern === 1) {
-    // パターン1: m から cm への変換（元のコード）
-    const m = rand(1, 9);
-    return { 
-      q: `${m}m は 何cm？`, 
-      a: String(m * 100), 
-      isHissan: false 
-    };
-
-  } else if (pattern === 2) {
-    // パターン2: m と cm から cm への変換（元のコード）
-    const m = rand(1, 9);
-    const cm = rand(1, 99);
-    return { 
-      q: `${m}m ${cm}cm は\n何cm？`, 
-      a: String(m * 100 + cm), 
-      isHissan: false 
-    };
-
-  } else if (pattern === 3) {
-    // パターン3: cm から m への変換（ぴったり）
-    const m = rand(2, 9);
-    return {
-      q: `${m * 100}cm は\n何m？`,
-      a: String(m),
-      isHissan: false
-    };
-
-  } else if (pattern === 4) {
-    // パターン4: cm から m と cm への変換（cm部分を問う）
-    const m = rand(1, 9);
-    const cm = rand(1, 99);
-    const total = m * 100 + cm;
-    return {
-      q: `${total}cm は\n${m}m と 何cm？`,
-      a: String(cm),
-      isHissan: false
-    };
-
-  } else {
-    // パターン5: 長さのたし算（文章題）
-    const m = rand(1, 5);
-    const cm = rand(10, 90);
-    return {
-      q: `${m}m の ひも と\n${cm}cm の ひも を つなぐと、\nぜんぶで 何cm になる？`,
-      a: String(m * 100 + cm),
-      isHissan: false
-    };
-  }
-}),
+          const pattern = rand(1, 5);
+          if (pattern === 1) {
+            const m = rand(1, 9);
+            return { q: `${m}m は 何cm？`, a: String(m * 100), isHissan: false };
+          } else if (pattern === 2) {
+            const m = rand(1, 9); const cm = rand(1, 99);
+            return { q: `${m}m ${cm}cm は\n何cm？`, a: String(m * 100 + cm), isHissan: false };
+          } else if (pattern === 3) {
+            const m = rand(2, 9);
+            return { q: `${m * 100}cm は\n何m？`, a: String(m), isHissan: false };
+          } else if (pattern === 4) {
+            const m = rand(1, 9); const cm = rand(1, 99); const total = m * 100 + cm;
+            return { q: `${total}cm は\n${m}m と 何cm？`, a: String(cm), isHissan: false };
+          } else {
+            const m = rand(1, 5); const cm = rand(10, 90);
+            return { q: `${m}m の ひも と\n${cm}cm の ひも を つなぐと、\nぜんぶで 何cm になる？`, a: String(m * 100 + cm), isHissan: false };
+          }
+        }),
         "たし算とひき算": () => generateUnique(() => { if (rand(1, 2) === 1) { const a = rand(10, 50); const b = rand(10, 50); return { q: `${a} より ${b} おおきい 数は？`, a: String(a+b), isHissan: true }; } else { const a = rand(30, 90); const b = rand(10, a-1); return { q: `${a} より ${b} ちいさい 数は？`, a: String(a-b), isHissan: true }; } }),
         "分数": () => generateUnique(() => { const den = [2, 3, 4, 8][rand(0, 3)]; return { q: `おなじ おおきさに ${den}つに\nわけたうちの１つを、\n分数で かくと？`, a: `1/${den}`, isHissan: false, isFractionUnit: true }; })
       },
       3: {
         "かけ算": () => generateUnique(() => { const type = rand(1, 3); if (type === 1) { const a = rand(1, 9); return { q: `${a} × 0 =`, a: "0", isHissan: false }; } else if (type === 2) { const a = rand(1, 9); const b = rand(1, 9) * 10; return { q: `${a} × ${b} =`, a: String(a*b), isHissan: false }; } else { const a = rand(1, 9) * 10; const b = rand(1, 9); return { q: `${a} × ${b} =`, a: String(a*b), isHissan: false }; } }),
         "時こくと時間のもとめ方": () => generateUnique(() => {
-  const pattern = rand(1, 5);
-
-  if (pattern === 1) {
-    // パターン1: 〇分後の時刻を求める（元のコードを調整）
-    const h = rand(1, 10);
-    const m = rand(10, 40);
-    const addM = rand(30, 50); // 繰り上がりが発生しやすい数値に
-    const totalM = m + addM;
-    const ansH = h + Math.floor(totalM / 60);
-    const ansM = totalM % 60;
-    return { 
-      q: `${h}時 ${m}分 の\n${addM}分後は 何時 何分ですか？\n（「○:○○」の形で こたえよう）`, 
-      a: `${ansH}:${ansM.toString().padStart(2, '0')}`, 
-      isHissan: true, 
-      timeMode: true 
-    };
-
-  } else if (pattern === 2) {
-    // パターン2: 〇分前の時刻を求める（ひき算）
-    const h = rand(2, 10); // 0時台になるのを防ぐため2時からスタート
-    const m = rand(10, 30);
-    const subM = rand(30, 50); // 繰り下がりが発生する数値に
-    let totalM = m - subM;
-    let ansH = h;
-    if (totalM < 0) {
-      totalM += 60;
-      ansH -= 1;
-    }
-    return { 
-      q: `${h}時 ${m}分 の\n${subM}分前は 何時 何分ですか？\n（「○:○○」の形で こたえよう）`, 
-      a: `${ansH}:${totalM.toString().padStart(2, '0')}`, 
-      isHissan: true, 
-      timeMode: true 
-    };
-
-  } else if (pattern === 3) {
-    // パターン3: かかった時間を求める（元のコードを調整）
-    const h = rand(1, 9);
-    const m = rand(10, 40);
-    const addM = rand(30, 80); // 1時間を超える場合も含める
-    const totalM = m + addM;
-    const ansH = h + Math.floor(totalM / 60);
-    const ansM = totalM % 60;
-    return { 
-      q: `${h}時 ${m}分 から\n${ansH}時 ${ansM}分 までの\n時間は 何分間ですか？`, 
-      a: String(addM), 
-      isHissan: true 
-    };
-
-  } else if (pattern === 4) {
-    // パターン4: 分から秒への単位変換（新出事項）
-    const min = rand(1, 5);
-    return {
-      q: `1分は 60秒です。\nでは、${min}分は 何秒ですか？`,
-      a: String(min * 60),
-      isHissan: false
-    };
-
-  } else {
-    // パターン5: 分と秒が混ざった単位変換
-    const min = rand(1, 3);
-    const sec = rand(10, 50);
-    return {
-      q: `${min}分 ${sec}秒 は\nぜんぶで 何秒ですか？`,
-      a: String(min * 60 + sec),
-      isHissan: true
-    };
-  }
-}),
+          const pattern = rand(1, 5);
+          if (pattern === 1) {
+            const h = rand(1, 10); const m = rand(10, 40); const addM = rand(30, 50); 
+            const totalM = m + addM; const ansH = h + Math.floor(totalM / 60); const ansM = totalM % 60;
+            return { q: `${h}時 ${m}分 の\n${addM}分後は 何時 何分ですか？\n（「○:○○」の形で こたえよう）`, a: `${ansH}:${ansM.toString().padStart(2, '0')}`, isHissan: true, timeMode: true };
+          } else if (pattern === 2) {
+            const h = rand(2, 10); const m = rand(10, 30); const subM = rand(30, 50); 
+            let totalM = m - subM; let ansH = h;
+            if (totalM < 0) { totalM += 60; ansH -= 1; }
+            return { q: `${h}時 ${m}分 の\n${subM}分前は 何時 何分ですか？\n（「○:○○」の形で こたえよう）`, a: `${ansH}:${totalM.toString().padStart(2, '0')}`, isHissan: true, timeMode: true };
+          } else if (pattern === 3) {
+            const h = rand(1, 9); const m = rand(10, 40); const addM = rand(30, 80); 
+            const totalM = m + addM; const ansH = h + Math.floor(totalM / 60); const ansM = totalM % 60;
+            return { q: `${h}時 ${m}分 から\n${ansH}時 ${ansM}分 までの\n時間は 何分間ですか？`, a: String(addM), isHissan: true };
+          } else if (pattern === 4) {
+            const min = rand(1, 5);
+            return { q: `1分は 60秒です。\nでは、${min}分は 何秒ですか？`, a: String(min * 60), isHissan: false };
+          } else {
+            const min = rand(1, 3); const sec = rand(10, 50);
+            return { q: `${min}分 ${sec}秒 は\nぜんぶで 何秒ですか？`, a: String(min * 60 + sec), isHissan: true };
+          }
+        }),
         "わり算": () => generateUnique(() => { const b = rand(1, 9); const quo = rand(1, 9); const a = b * quo; return { q: `${a} ÷ ${b} =`, a: String(quo), isHissan: false }; }),
         "たし算とひき算の筆算": () => generateUnique(() => { if (rand(0, 1) === 0) { const a = rand(100, 899); const b = rand(100, 999 - a); return { q: `${a} + ${b} =`, a: String(a+b), isHissan: true }; } else { const a = rand(200, 999); const b = rand(100, a - 1); return { q: `${a} - ${b} =`, a: String(a-b), isHissan: true }; } }),
         "長いものの長さのはかり方と表し方": () => generateUnique(() => { if (rand(1, 2) === 1) { const km = rand(1, 5); const m = rand(10, 990); return { q: `${km}km ${m}m は\n何m？`, a: String(km*1000 + m), isHissan: true }; } else { const km = rand(1, 5); return { q: `${km}km は 何m？`, a: String(km*1000), isHissan: false }; } }),
@@ -418,966 +249,293 @@
         "大きい数のわり算 / 分数とわり算": () => generateUnique(() => { if (rand(0, 1) === 0) { const b = rand(2, 6); return { q: `1m の テープを おなじ ながさに\n${b}つ に 分けた 1つ分は？\n(分数で こたえよう)`, a: `1/${b}`, isHissan: false, isFractionUnit: true }; } else { const b = rand(2, 9); const quo = rand(1, 9) * 10; const a = b * quo; return { q: `${a} ÷ ${b} =`, a: String(quo), isHissan: true }; } }),
         "小数": () => generateUnique(() => { if (rand(0, 1) === 0) { const a = rand(1, 50); const b = rand(1, 50); return { q: `${a/10} + ${b/10} =`, a: String((a+b)/10), isHissan: true }; } else { const a = rand(11, 99); const b = rand(1, a - 1); return { q: `${a/10} - ${b/10} =`, a: String((a-b)/10), isHissan: true }; } }),
         "重さのたんいとはかり方": () => generateUnique(() => {
-  const pattern = rand(1, 5);
-
-  if (pattern === 1) {
-    const kg = rand(1, 5);
-    const g = rand(10, 990);
-    return { q: `${kg}kg ${g}g は\n何g？`, a: String(kg * 1000 + g), isHissan: true };
-  } else if (pattern === 2) {
-    const kg = rand(1, 9);
-    return { q: `${kg}kg は 何g？`, a: String(kg * 1000), isHissan: false };
-  } else if (pattern === 3) {
-    const t = rand(1, 5);
-    return { q: `${t}t は 何kg？`, a: String(t * 1000), isHissan: false };
-  } else if (pattern === 4) {
-    // 問題用の重さを生成（100g〜1900gの間で100g単位）
-    const totalG = rand(1, 19) * 100;
-    const angle = (totalG / 2000) * 360;
-
-    // SVGタグを直接文字列として組み立てる
-    let svg = `<svg viewBox="0 0 200 200" width="180" height="180" style="display:block; margin: 10px auto; background: white; border-radius: 50%;">`;
-    svg += `<circle cx="100" cy="100" r="95" fill="none" stroke="#66ccff" stroke-width="4" />`;
-
-    // 200gごとの目盛りと数字の描画（画像のデザインを再現）
-    for (let i = 0; i < 20; i++) {
-      const a = (i * 18 - 90) * (Math.PI / 180);
-      const isMajor = i % 2 === 0; // 200gごとの太い線
-      const r1 = 95, r2 = isMajor ? 80 : 85;
-      const x1 = 100 + r1 * Math.cos(a), y1 = 100 + r1 * Math.sin(a);
-      const x2 = 100 + r2 * Math.cos(a), y2 = 100 + r2 * Math.sin(a);
-      svg += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#333" stroke-width="${isMajor ? 2 : 1}" />`;
-
-      if (isMajor) {
-        const rText = 60;
-        const tx = 100 + rText * Math.cos(a), ty = 100 + rText * Math.sin(a) + 4;
-        let label = "";
-        if (i === 0) label = "0";
-        else if (i === 10) label = "1kg";
-        else label = (i % 10) * 100 + "g";
-        svg += `<text x="${tx}" y="${ty}" font-size="12" text-anchor="middle" fill="#333">${label}</text>`;
-      }
-    }
-
-    // 赤い針の描画
-    svg += `<line x1="100" y1="100" x2="100" y2="25" stroke="red" stroke-width="4" transform="rotate(${angle} 100 100)" />`;
-    // 針の中心の丸
-    svg += `<circle cx="100" cy="100" r="5" fill="#333" />`;
-    svg += `</svg>`;
-
-    return {
-      q: `はりの さしている 重さは\nぜんぶで 何g ですか？\n${svg}`,
-      a: String(totalG),
-      isHissan: false
-    };
-  } else {
-    const kg = rand(1, 3);
-    const g1 = rand(100, 500);
-    const g2 = rand(100, 400);
-    return {
-      q: `${kg}kg ${g1}g の ランドセルに\n${g2}g の 本を 入れました。\nぜんぶで 何g に なりますか？`,
-      a: String(kg * 1000 + g1 + g2),
-      isHissan: true
-    };
-  }
-}),
+          const pattern = rand(1, 5);
+          if (pattern === 1) {
+            const kg = rand(1, 5);
+            const g = rand(10, 990);
+            return { q: `${kg}kg ${g}g は\n何g？`, a: String(kg * 1000 + g), isHissan: true };
+          } else if (pattern === 2) {
+            const kg = rand(1, 9);
+            return { q: `${kg}kg は 何g？`, a: String(kg * 1000), isHissan: false };
+          } else if (pattern === 3) {
+            const t = rand(1, 5);
+            return { q: `${t}t は 何kg？`, a: String(t * 1000), isHissan: false };
+          } else if (pattern === 4) {
+            const totalG = rand(1, 19) * 100;
+            return {
+              q: "はりの さしている 重さは\nぜんぶで 何g ですか？",
+              a: String(totalG),
+              isScale: true,
+              scaleData: { g: totalG },
+              isHissan: false
+            };
+          } else {
+            const kg = rand(1, 3);
+            const g1 = rand(100, 500);
+            const g2 = rand(100, 400);
+            return {
+              q: `${kg}kg ${g1}g の ランドセルに\n${g2}g の 本を 入れました。\nぜんぶで 何g に なりますか？`,
+              a: String(kg * 1000 + g1 + g2),
+              isHissan: true
+            };
+          }
+        }),
         "分数": () => generateUnique(() => { const isAdd = rand(0, 1) === 0; const den = rand(3, 9); if (isAdd) { const a = rand(1, den - 1); const b = rand(1, den - a); return { q: `${a}/${den} + ${b}/${den} =`, a: `${a+b}/${den}`, isHissan: false, isFractionUnit: true }; } else { const a = rand(2, den); const b = rand(1, a - 1); if (a === den && rand(0, 1) === 0) { return { q: `1 - ${b}/${den} =`, a: `${den-b}/${den}`, isHissan: false, isFractionUnit: true }; } else { return { q: `${a}/${den} - ${b}/${den} =`, a: `${a-b}/${den}`, isHissan: false, isFractionUnit: true }; } } }),
         "□を使った式": () => generateUnique(() => { const a = rand(1, 50); const b = rand(a+1, 99); if (rand(1, 2) === 1) { return { q: `□ + ${a} = ${b}\n□は いくつ？`, a: String(b-a), isHissan: true }; } else { return { q: `${b} - □ = ${a}\n□は いくつ？`, a: String(b-a), isHissan: true }; } }),
         "かけ算の筆算(2)": () => generateUnique(() => { const a = rand(11, 99); const b = rand(11, 99); return { q: `${a} × ${b} =`, a: String(a*b), isHissan: true }; }),
         "倍の計算": () => generateUnique(() => { const a = rand(2, 9); const b = rand(2, 9); if (rand(1, 2) === 1) { return { q: `${a} の ${b}倍 は\nいくつ？`, a: String(a*b), isHissan: false }; } else { return { q: `${a*b} は ${a} の\n何倍？`, a: String(b), isHissan: false }; } }),
         "三角形と角": () => generateUnique(() => {
-  const pattern = rand(1, 5);
-
-  if (pattern === 1) {
-    // パターン1: 図形を見て答える（元のコードの拡張）
-    const type = rand(0, 1) === 0 ? 'isosceles' : 'equilateral';
-    return {
-      q: "この 三角形の なまえ は？\n1: にとうへん三角形\n2: 正三角形",
-      a: type === 'isosceles' ? "1" : "2",
-      isTriangle: true,
-      triangleData: { type: type },
-      isHissan: false
-    };
-
-  } else if (pattern === 2) {
-    // パターン2: 辺の長さから図形を判別する
-    const type = rand(0, 1);
-    const sideA = rand(4, 8); // 4cm〜8cm
-    if (type === 0) {
-      // 二等辺三角形（他の1辺の長さを変える）
-      const sideB = sideA + rand(1, 3);
-      return {
-        q: `辺の 長さが ${sideA}cm、${sideA}cm、${sideB}cm の\n三角形の なまえ は？\n1: にとうへん三角形\n2: 正三角形`,
-        a: "1",
-        isHissan: false
-      };
-    } else {
-      // 正三角形
-      return {
-        q: `辺の 長さが ${sideA}cm、${sideA}cm、${sideA}cm の\n三角形の なまえ は？\n1: にとうへん三角形\n2: 正三角形`,
-        a: "2",
-        isHissan: false
-      };
-    }
-
-  } else if (pattern === 3) {
-    // パターン3: 正三角形の角の性質
-    return {
-      q: "正三角形の 3つの 角の 大きさは\nどうなって いますか？\n1: みんな おなじ\n2: 2つだけ おなじ",
-      a: "1",
-      isHissan: false
-    };
-
-  } else if (pattern === 4) {
-    // パターン4: 二等辺三角形の角の性質
-    return {
-      q: "にとうへん三角形の 角の 大きさは\nどうなって いますか？\n1: みんな おなじ\n2: 2つだけ おなじ",
-      a: "2",
-      isHissan: false
-    };
-
-  } else {
-    // パターン5: 言葉の定義から答える
-    const type = rand(0, 1);
-    if (type === 0) {
-      return {
-        q: "3つの 辺の 長さが みんな おなじ\n三角形を 何と いいますか？\n1: にとうへん三角形\n2: 正三角形",
-        a: "2",
-        isHissan: false
-      };
-    } else {
-      return {
-        q: "2つの 辺の 長さが おなじ\n三角形を 何と いいますか？\n1: にとうへん三角形\n2: 正三角形",
-        a: "1",
-        isHissan: false
-      };
-    }
-  }
-})
+          const pattern = rand(1, 5);
+          if (pattern === 1) {
+            const type = rand(0, 1) === 0 ? 'isosceles' : 'equilateral';
+            return { q: "この 三角形の なまえ は？\n1: にとうへん三角形\n2: 正三角形", a: type === 'isosceles' ? "1" : "2", isTriangle: true, triangleData: { type: type }, isHissan: false };
+          } else if (pattern === 2) {
+            const type = rand(0, 1); const sideA = rand(4, 8);
+            if (type === 0) {
+              const sideB = sideA + rand(1, 3);
+              return { q: `辺の 長さが ${sideA}cm、${sideA}cm、${sideB}cm の\n三角形の なまえ は？\n1: にとうへん三角形\n2: 正三角形`, a: "1", isHissan: false };
+            } else {
+              return { q: `辺の 長さが ${sideA}cm、${sideA}cm、${sideA}cm の\n三角形の なまえ は？\n1: にとうへん三角形\n2: 正三角形`, a: "2", isHissan: false };
+            }
+          } else if (pattern === 3) {
+            return { q: "正三角形の 3つの 角の 大きさは\nどうなって いますか？\n1: みんな おなじ\n2: 2つだけ おなじ", a: "1", isHissan: false };
+          } else if (pattern === 4) {
+            return { q: "にとうへん三角形の 角の 大きさは\nどうなって いますか？\n1: みんな おなじ\n2: 2つだけ おなじ", a: "2", isHissan: false };
+          } else {
+            const type = rand(0, 1);
+            if (type === 0) return { q: "3つの 辺の 長さが みんな おなじ\n三角形を 何と いいますか？\n1: にとうへん三角形\n2: 正三角形", a: "2", isHissan: false };
+            else return { q: "2つの 辺の 長さが おなじ\n三角形を 何と いいますか？\n1: にとうへん三角形\n2: 正三角形", a: "1", isHissan: false };
+          }
+        })
       },
       4: {
         "大きい数のしくみ": () => generateUnique(() => {
-  const pattern = rand(1, 5);
-
-  if (pattern === 1) {
-    // パターン1: 10倍の数（元のコード）
-    const a = rand(2, 9);
-    return { 
-      q: `${a}億 の 10倍 は\n何億 ですか？`, 
-      a: String(a * 10), 
-      isHissan: false 
-    };
-
-  } else if (pattern === 2) {
-    // パターン2: 1/10の数（修正版）
-    const a = rand(2, 9);
-    return { 
-      q: `${a}兆 を 10で わった数は\n何千億 ですか？`, 
-      a: String(a), 
-      isHissan: false 
-    };
-
-  } else if (pattern === 3) {
-    // パターン3: 数の構成（元のコード）
-    const a = rand(1, 9);
-    const b = rand(1, 9);
-    return { 
-      q: `1億を ${a}こ、1万を ${b}こ\nあつめた 数は？\n（数字で こたえよう）`, 
-      a: `${a}000${b}0000`, 
-      isHissan: false 
-    };
-
-  } else if (pattern === 4) {
-    // パターン4: 大きな数の単位変換（千万→億）
-    const a = rand(2, 9);
-    return { 
-      q: `1000万 を ${a * 10}こ\nあつめた 数は\n何億 ですか？`, 
-      a: String(a), 
-      isHissan: false 
-    };
-
-  } else {
-    // パターン5: 大きな数のしくみ（10こで上の位）
-    const units = [
-      { target: "万", sub: "千" },
-      { target: "億", sub: "千万" },
-      { target: "兆", sub: "千億" }
-    ];
-    const unit = units[rand(0, 2)];
-    return {
-      q: `1${unit.target} は、1${unit.sub}を\n何こ あつめた 数ですか？`,
-      a: "10",
-      isHissan: false
-    };
-  }
-}),
+          const pattern = rand(1, 5);
+          if (pattern === 1) {
+            const a = rand(2, 9); return { q: `${a}億 の 10倍 は\n何億 ですか？`, a: String(a * 10), isHissan: false };
+          } else if (pattern === 2) {
+            const a = rand(2, 9); return { q: `${a}兆 を 10で わった数は\n何千億 ですか？`, a: String(a), isHissan: false };
+          } else if (pattern === 3) {
+            const a = rand(1, 9); const b = rand(1, 9); return { q: `1億を ${a}こ、1万を ${b}こ\nあつめた 数は？\n（数字で こたえよう）`, a: `${a}000${b}0000`, isHissan: false };
+          } else if (pattern === 4) {
+            const a = rand(2, 9); return { q: `1000万 を ${a * 10}こ\nあつめた 数は\n何億 ですか？`, a: String(a), isHissan: false };
+          } else {
+            const units = [ { target: "万", sub: "千" }, { target: "億", sub: "千万" }, { target: "兆", sub: "千億" } ];
+            const unit = units[rand(0, 2)];
+            return { q: `1${unit.target} は、1${unit.sub}を\n何こ あつめた 数ですか？`, a: "10", isHissan: false };
+          }
+        }),
         "折れ線グラフと表": () => generateUnique(() => { const values = Array.from({length: 5}, () => rand(10, 35)); const months = [4, 5, 6, 7, 8]; const targetIdx = rand(0, 4); return { q: `${months[targetIdx]}月の きおんは\n何度 ですか？`, a: String(values[targetIdx]), isLineGraph: true, graphData: { title: "きおん の しらべ", labels: months.map(m=>m+"月"), values, max: 40, step: 5, subStep: 1 }, isHissan: false }; }),
         "わり算の筆算(1)": () => generateUnique(() => { const b = rand(2, 9); const quo = rand(11, 49); const r = rand(1, b - 1); const a = b * quo + r; return { q: `${a} ÷ ${b} =`, a: `${quo}...${r}`, isHissan: true, isRemainder: true }; }),
         "角の大きさ": () => generateUnique(() => {
-  const pattern = rand(1, 5);
-
-  if (pattern === 1) {
-    // パターン1: 分度器で測る（基本の角・元のコード）
-    const angles = [30, 45, 60, 90, 120, 135, 150];
-    const a = angles[rand(0, angles.length - 1)];
-    return { 
-      q: "分度器を 使いましょう。\nこの 角の 大きさは\n何度 ですか？", 
-      a: String(a), 
-      isAngle: true, 
-      angleData: { angle: a }, 
-      isHissan: false 
-    };
-
-  } else if (pattern === 2) {
-    // パターン2: 180度より大きい角
-    // 4年生で初めて、半回転（180度）を超える角を学習します
-    const angles = [210, 225, 240, 270, 300, 315, 330];
-    const a = angles[rand(0, angles.length - 1)];
-    return { 
-      q: "この 角の 大きさは\n何度 ですか？\n（180度より 大きい 角です）", 
-      a: String(a), 
-      isAngle: true, 
-      angleData: { angle: a }, 
-      isHissan: false 
-    };
-
-  } else if (pattern === 3) {
-    // パターン3: 直角の数と角度の関係
-    const rightAngles = rand(2, 4); // 2直角、3直角、4直角
-    return { 
-      q: `1直角は 90度 です。\nでは、${rightAngles}直角は\n何度 ですか？`, 
-      a: String(rightAngles * 90), 
-      isHissan: false 
-    };
-
-  } else if (pattern === 4) {
-    // パターン4: 一直線（180度）を利用したひき算
-    const a = rand(3, 14) * 10; // 30度 〜 140度
-    return { 
-      q: `一直線の 角の 大きさは\n180度 です。\n180度の うち、${a}度を ひいた\n残りの 角は 何度ですか？`, 
-      a: String(180 - a), 
-      isHissan: true 
-    };
-
-  } else {
-    // パターン5: 1回転（360度）を利用したひき算
-    const a = rand(5, 15) * 10; // 50度 〜 150度
-    return { 
-      q: `1回転の 角の 大きさは\n360度 です。\n360度の うち、${a}度を ひいた\n残りの 角は 何度ですか？`, 
-      a: String(360 - a), 
-      isHissan: true 
-    };
-  }
-}),
+          const pattern = rand(1, 5);
+          if (pattern === 1) {
+            const angles = [30, 45, 60, 90, 120, 135, 150]; const a = angles[rand(0, angles.length - 1)];
+            return { q: "分度器を 使いましょう。\nこの 角の 大きさは\n何度 ですか？", a: String(a), isAngle: true, angleData: { angle: a }, isHissan: false };
+          } else if (pattern === 2) {
+            const angles = [210, 225, 240, 270, 300, 315, 330]; const a = angles[rand(0, angles.length - 1)];
+            return { q: "この 角の 大きさは\n何度 ですか？\n（180度より 大きい 角です）", a: String(a), isAngle: true, angleData: { angle: a }, isHissan: false };
+          } else if (pattern === 3) {
+            const rightAngles = rand(2, 4); return { q: `1直角は 90度 です。\nでは、${rightAngles}直角は\n何度 ですか？`, a: String(rightAngles * 90), isHissan: false };
+          } else if (pattern === 4) {
+            const a = rand(3, 14) * 10; return { q: `一直線の 角の 大きさは\n180度 です。\n180度の うち、${a}度を ひいた\n残りの 角は 何度ですか？`, a: String(180 - a), isHissan: true };
+          } else {
+            const a = rand(5, 15) * 10; return { q: `1回転の 角の 大きさは\n360度 です。\n360度の うち、${a}度を ひいた\n残りの 角は 何度ですか？`, a: String(360 - a), isHissan: true };
+          }
+        }),
         "小数のしくみ": () => generateUnique(() => { const type = rand(1, 3); if (type === 1) { const a = rand(11, 99); return { q: `0.01 を ${a}こ\nあつめた 数は？`, a: String(a / 100), isHissan: false }; } else if (type === 2) { const a = rand(1, 9); const b = rand(1, 9); return { q: `${a/10} + ${b/100} =`, a: String((a*10+b)/100), isHissan: true }; } else { const a = rand(11, 99); return { q: `${a/100} は 0.01 を\n何こ あつめた数？`, a: String(a), isHissan: false }; } }),
         "わり算の筆算(2)": () => generateUnique(() => { const b = rand(11, 49); const quo = rand(2, 9); const r = rand(1, b - 1); const a = b * quo + r; return { q: `${a} ÷ ${b} =`, a: `${quo}...${r}`, isHissan: true, isRemainder: true }; }),
         "がい数の表し方と使い方": () => generateUnique(() => {
-  const pattern = rand(1, 5);
-
-  if (pattern === 1) {
-    // パターン1: 百の位までのがい数（十の位を四捨五入）
-    const a = rand(1111, 9999);
-    const ans = Math.round(a / 100) * 100;
-    return { 
-      q: `${a} を 四捨五入して\n百の位までの\nがい数に しよう`, 
-      a: String(ans), 
-      isHissan: true 
-    };
-
-  } else if (pattern === 2) {
-    // パターン2: 千の位までのがい数（百の位を四捨五入）
-    const a = rand(11111, 99999);
-    const ans = Math.round(a / 1000) * 1000;
-    return { 
-      q: `${a} を 四捨五入して\n千の位までの\nがい数に しよう`, 
-      a: String(ans), 
-      isHissan: true 
-    };
-
-  } else if (pattern === 3) {
-    // パターン3: 上から1けたのがい数
-    const a = rand(1111, 9999);
-    const ans = Math.round(a / 1000) * 1000;
-    return { 
-      q: `${a} を 四捨五入して\n上から 1けたの\nがい数に しよう`, 
-      a: String(ans), 
-      isHissan: true 
-    };
-
-  } else if (pattern === 4) {
-    // パターン4: 上から2けたのがい数
-    const a = rand(1111, 9999);
-    const ans = Math.round(a / 100) * 100;
-    return { 
-      q: `${a} を 四捨五入して\n上から 2けたの\nがい数に しよう`, 
-      a: String(ans), 
-      isHissan: true 
-    };
-
-  } else {
-    // パターン5: 和をがい数で見積もる
-    const aBase = rand(2, 7);
-    const bBase = rand(2, 7);
-    // 100の位をランダムにして四捨五入の要素を入れる
-    const a = aBase * 1000 + rand(1, 9) * 100 + rand(10, 99);
-    const b = bBase * 1000 + rand(1, 9) * 100 + rand(10, 99);
-    const aRound = Math.round(a / 1000) * 1000;
-    const bRound = Math.round(b / 1000) * 1000;
-    return { 
-      q: `${a} と ${b} の たし算の 答えを、\nそれぞれ 上から 1けたの\nがい数に してから 見積もろう`, 
-      a: String(aRound + bRound), 
-      isHissan: true 
-    };
-  }
-}),        "計算のきまり": () => generateUnique(() => { if (rand(1, 2) === 1) { const a = rand(2, 9); const b = rand(2, 9); const c = rand(2, 9); return { q: `${a*10} - ${b} × ${c} =`, a: String(a*10 - b*c), isHissan: true }; } else { const a = rand(2, 9); const b = rand(2, 5); const c = rand(2, 5); return { q: `${a} × ${b} + ${a} × ${c} =`, a: String(a*(b+c)), isHissan: true }; } }),
+          const pattern = rand(1, 5);
+          if (pattern === 1) {
+            const a = rand(1111, 9999); const ans = Math.round(a / 100) * 100;
+            return { q: `${a} を 四捨五入して\n百の位までの\nがい数に しよう`, a: String(ans), isHissan: true };
+          } else if (pattern === 2) {
+            const a = rand(11111, 99999); const ans = Math.round(a / 1000) * 1000;
+            return { q: `${a} を 四捨五入して\n千の位までの\nがい数に しよう`, a: String(ans), isHissan: true };
+          } else if (pattern === 3) {
+            const a = rand(1111, 9999); const ans = Math.round(a / 1000) * 1000;
+            return { q: `${a} を 四捨五入して\n上から 1けたの\nがい数に しよう`, a: String(ans), isHissan: true };
+          } else if (pattern === 4) {
+            const a = rand(1111, 9999); const ans = Math.round(a / 100) * 100;
+            return { q: `${a} を 四捨五入して\n上から 2けたの\nがい数に しよう`, a: String(ans), isHissan: true };
+          } else {
+            const aBase = rand(2, 7); const bBase = rand(2, 7);
+            const a = aBase * 1000 + rand(1, 9) * 100 + rand(10, 99); const b = bBase * 1000 + rand(1, 9) * 100 + rand(10, 99);
+            const aRound = Math.round(a / 1000) * 1000; const bRound = Math.round(b / 1000) * 1000;
+            return { q: `${a} と ${b} の たし算の 答えを、\nそれぞれ 上から 1けたの\nがい数に してから 見積もろう`, a: String(aRound + bRound), isHissan: true };
+          }
+        }),
+        "計算のきまり": () => generateUnique(() => { if (rand(1, 2) === 1) { const a = rand(2, 9); const b = rand(2, 9); const c = rand(2, 9); return { q: `${a*10} - ${b} × ${c} =`, a: String(a*10 - b*c), isHissan: true }; } else { const a = rand(2, 9); const b = rand(2, 5); const c = rand(2, 5); return { q: `${a} × ${b} + ${a} × ${c} =`, a: String(a*(b+c)), isHissan: true }; } }),
         "分数": () => generateUnique(() => { const den = rand(4, 9); if (rand(0, 1) === 0) { const a = rand(1, den-1); const b = rand(1, den-a); return { q: `${a}/${den} + ${b}/${den} =`, a: (a+b === den) ? "1" : `${a+b}/${den}`, isHissan: false, isFractionUnit: true }; } else { const a = rand(2, den-1); const b = rand(1, a-1); return { q: `${a}/${den} - ${b}/${den} =`, a: `${a-b}/${den}`, isHissan: false, isFractionUnit: true }; } }),
         "面積のくらべ方と表し方": () => generateUnique(() => {
-  const pattern = rand(1, 5);
-
-  if (pattern === 1) {
-    // パターン1: 長方形の面積（図形あり）
-    const w = rand(3, 9);
-    const h = rand(2, 8);
-    // たてと横が同じにならないように調整
-    const actualH = w === h ? h + 1 : h; 
-    return { 
-      q: "この 長方形の 面積は\n何cm² ですか？", 
-      a: String(w * actualH), 
-      isArea: true, 
-      areaData: { w, h: actualH }, 
-      isHissan: true 
-    };
-
-  } else if (pattern === 2) {
-    // パターン2: 正方形の面積（図形あり）
-    const a = rand(3, 9);
-    return { 
-      q: "この 正方形の 面積は\n何cm² ですか？", 
-      a: String(a * a), 
-      isArea: true, 
-      areaData: { w: a, h: a }, 
-      isHissan: true 
-    };
-
-  } else if (pattern === 3) {
-    // パターン3: 大きな単位（m²）の文章題
-    const w = rand(1, 5) * 10;
-    const h = rand(1, 5) * 10;
-    return { 
-      q: `たて ${h}m、横 ${w}m の\n長方形の 畑の 面積は\n何m² ですか？`, 
-      a: String(w * h), 
-      isArea: false, 
-      isHissan: true 
-    };
-
-  } else if (pattern === 4) {
-    // パターン4: 面積から辺の長さを求める（逆算）
-    const w = rand(2, 9);
-    const h = rand(2, 9);
-    const area = w * h;
-    return { 
-      q: `面積が ${area}cm² で、\nたてが ${h}cm の 長方形の\n横の 長さは 何cm ですか？`, 
-      a: String(w), 
-      isArea: false, 
-      isHissan: true 
-    };
-
-  } else {
-    // パターン5: 単位の相互関係（1m² = 10000cm²、1a = 100m²など）
-    const type = rand(1, 2);
-    if (type === 1) {
-      return { 
-        q: "1m² は 何cm² ですか？", 
-        a: "10000", 
-        isArea: false, 
-        isHissan: false 
-      };
-    } else {
-      return { 
-        q: "1辺が 10m の 正方形の 面積は\n100m² です。\nこれは 何a(アール) といいますか？", 
-        a: "1", 
-        isArea: false, 
-        isHissan: false 
-      };
-    }
-  }
-}),
+          const pattern = rand(1, 5);
+          if (pattern === 1) {
+            const w = rand(3, 9); const h = rand(2, 8); const actualH = w === h ? h + 1 : h; 
+            return { q: "この 長方形の 面積は\n何cm² ですか？", a: String(w * actualH), isArea: true, areaData: { w, h: actualH }, isHissan: true };
+          } else if (pattern === 2) {
+            const a = rand(3, 9); return { q: "この 正方形の 面積は\n何cm² ですか？", a: String(a * a), isArea: true, areaData: { w: a, h: a }, isHissan: true };
+          } else if (pattern === 3) {
+            const w = rand(1, 5) * 10; const h = rand(1, 5) * 10;
+            return { q: `たて ${h}m、横 ${w}m の\n長方形の 畑の 面積は\n何m² ですか？`, a: String(w * h), isArea: false, isHissan: true };
+          } else if (pattern === 4) {
+            const w = rand(2, 9); const h = rand(2, 9); const area = w * h;
+            return { q: `面積が ${area}cm² で、\nたてが ${h}cm の 長方形の\n横の 長さは 何cm ですか？`, a: String(w), isArea: false, isHissan: true };
+          } else {
+            const type = rand(1, 2);
+            if (type === 1) return { q: "1m² は 何cm² ですか？", a: "10000", isArea: false, isHissan: false };
+            else return { q: "1辺が 10m の 正方形の 面積は\n100m² です。\nこれは 何a(アール) といいますか？", a: "1", isArea: false, isHissan: false };
+          }
+        }),
         "小数のかけ算とわり算": () => generateUnique(() => { if (rand(0, 1) === 0) { const a = rand(11, 49); const b = rand(2, 9); return { q: `${a/10} × ${b} =`, a: String((a*b)/10), isHissan: true }; } else { const b = rand(2, 9); const quo = rand(11, 49); const a = b * quo; return { q: `${a/10} ÷ ${b} =`, a: String(quo/10), isHissan: true }; } }),
         "直方体と立方体": () => generateUnique(() => {
-  const pattern = rand(1, 5);
-  const solidType = rand(0, 1) === 0 ? 'cube' : 'cuboid';
-  const shapeName = solidType === 'cube' ? '立方体' : '直方体';
-
-  if (pattern === 1) {
-    // パターン1: 面の数
-    return { 
-      q: `この ${shapeName}の\n面の 数は いくつ？`, 
-      a: "6", 
-      isSolid: true, 
-      solidData: { type: solidType }, 
-      isHissan: false 
-    };
-
-  } else if (pattern === 2) {
-    // パターン2: 辺の数
-    return { 
-      q: `この ${shapeName}の\n辺の 数は いくつ？`, 
-      a: "12", 
-      isSolid: true, 
-      solidData: { type: solidType }, 
-      isHissan: false 
-    };
-
-  } else if (pattern === 3) {
-    // パターン3: 頂点の数
-    return { 
-      q: `この ${shapeName}の 頂点の\n数は いくつ？`, 
-      a: "8", 
-      isSolid: true, 
-      solidData: { type: solidType }, 
-      isHissan: false 
-    };
-
-  } else if (pattern === 4) {
-    // パターン4: 面の形や合同についての性質
-    if (solidType === 'cube') {
-      return {
-        q: `立方体の 6つの 面は\nすべて どんな 形ですか？\n1: 長方形\n2: 正方形`,
-        a: "2",
-        isSolid: true,
-        solidData: { type: 'cube' },
-        isHissan: false
-      };
-    } else {
-      return {
-        q: `直方体の 向きあう 面は\nどんな 関係ですか？\n1: ぴったり 重なる（合同）\n2: 違う 大きさ`,
-        a: "1",
-        isSolid: true,
-        solidData: { type: 'cuboid' },
-        isHissan: false
-      };
-    }
-
-  } else {
-    // パターン5: 平行な面の組数
-    return {
-      q: `この ${shapeName}には、\n平行な 面の 組が\nいくつ ありますか？`,
-      a: "3",
-      isSolid: true,
-      solidData: { type: solidType },
-      isHissan: false
-    };
-  }
-})
+          const pattern = rand(1, 5);
+          const solidType = rand(0, 1) === 0 ? 'cube' : 'cuboid';
+          const shapeName = solidType === 'cube' ? '立方体' : '直方体';
+          if (pattern === 1) return { q: `この ${shapeName}の\n面の 数は いくつ？`, a: "6", isSolid: true, solidData: { type: solidType }, isHissan: false };
+          else if (pattern === 2) return { q: `この ${shapeName}の\n辺の 数は いくつ？`, a: "12", isSolid: true, solidData: { type: solidType }, isHissan: false };
+          else if (pattern === 3) return { q: `この ${shapeName}の 頂点の\n数は いくつ？`, a: "8", isSolid: true, solidData: { type: solidType }, isHissan: false };
+          else if (pattern === 4) {
+            if (solidType === 'cube') return { q: `立方体の 6つの 面は\nすべて どんな 形ですか？\n1: 長方形\n2: 正方形`, a: "2", isSolid: true, solidData: { type: 'cube' }, isHissan: false };
+            else return { q: `直方体の 向きあう 面は\nどんな 関係ですか？\n1: ぴったり 重なる（合同）\n2: 違う 大きさ`, a: "1", isSolid: true, solidData: { type: 'cuboid' }, isHissan: false };
+          } else return { q: `この ${shapeName}には、\n平行な 面の 組が\nいくつ ありますか？`, a: "3", isSolid: true, solidData: { type: solidType }, isHissan: false };
+        })
       },
       5: {
-       "整数と小数": () => generateUnique(() => {
-  const pattern = rand(1, 5);
-
-  if (pattern === 1) {
-    // パターン1: 10倍、100倍した数（元のコード）
-    const a = rand(11, 999) / 100; // 0.11 〜 9.99
-    const m = rand(1, 2) === 1 ? 10 : 100;
-    // 浮動小数点計算の誤差を防ぐための丸め処理
-    const ans = Math.round(a * m * 100) / 100;
-    return { 
-      q: `${a} を ${m}倍した\n数は いくつですか？`, 
-      a: String(ans), 
-      isHissan: false 
-    };
-
-  } else if (pattern === 2) {
-    // パターン2: 1/10、1/100にした数（元のコード）
-    const a = rand(11, 999) / 10; // 1.1 〜 99.9
-    const m = rand(1, 2) === 1 ? 10 : 100;
-    const ans = Math.round((a / m) * 1000) / 1000;
-    return { 
-      q: `${a} を 1/${m} にした\n数は いくつですか？`, 
-      a: String(ans), 
-      isHissan: false 
-    };
-
-  } else if (pattern === 3) {
-    // パターン3: 0.001を単位とした構成
-    const count = rand(15, 999);
-    return {
-      q: `0.001 を ${count}こ あつめた\n数は いくつですか？`,
-      a: String(count / 1000),
-      isHissan: false
-    };
-
-  } else if (pattern === 4) {
-    // パターン4: 小数の相対的な大きさ（いくつ集めた数か）
-    const num = rand(1, 9) + rand(1, 9) / 10 + rand(1, 9) / 100; // 1.11 〜 9.99
-    const cleanNum = Math.round(num * 100) / 100;
-    const count = Math.round(cleanNum * 100);
-    return {
-      q: `${cleanNum} は 0.01 を\n何こ あつめた 数ですか？`,
-      a: String(count),
-      isHissan: false
-    };
-
-  } else {
-    // パターン5: 小数点のうつり方の規則性
-    const isMultiply = rand(0, 1) === 0;
-    const multiplier = rand(1, 2) === 1 ? 10 : 100;
-    const digits = multiplier === 10 ? "1" : "2";
-    const word = isMultiply ? `${multiplier}倍に する` : `1/${multiplier}に する`;
-    
-    return {
-      q: `小数を ${word}と、\n小数点は どちらに 何けた\nうつりますか？\n1: 右に ${digits}けた\n2: 左に ${digits}けた`,
-      a: isMultiply ? "1" : "2",
-      isHissan: false
-    };
-  }
-}),
+        "整数と小数": () => generateUnique(() => {
+          const pattern = rand(1, 5);
+          if (pattern === 1) {
+            const a = rand(11, 999) / 100; const m = rand(1, 2) === 1 ? 10 : 100; const ans = Math.round(a * m * 100) / 100;
+            return { q: `${a} を ${m}倍した\n数は いくつですか？`, a: String(ans), isHissan: false };
+          } else if (pattern === 2) {
+            const a = rand(11, 999) / 10; const m = rand(1, 2) === 1 ? 10 : 100; const ans = Math.round((a / m) * 1000) / 1000;
+            return { q: `${a} を 1/${m} にした\n数は いくつですか？`, a: String(ans), isHissan: false };
+          } else if (pattern === 3) {
+            const count = rand(15, 999); return { q: `0.001 を ${count}こ あつめた\n数は いくつですか？`, a: String(count / 1000), isHissan: false };
+          } else if (pattern === 4) {
+            const num = rand(1, 9) + rand(1, 9) / 10 + rand(1, 9) / 100; const cleanNum = Math.round(num * 100) / 100; const count = Math.round(cleanNum * 100);
+            return { q: `${cleanNum} は 0.01 を\n何こ あつめた 数ですか？`, a: String(count), isHissan: false };
+          } else {
+            const isMultiply = rand(0, 1) === 0; const multiplier = rand(1, 2) === 1 ? 10 : 100; const digits = multiplier === 10 ? "1" : "2"; const word = isMultiply ? `${multiplier}倍に する` : `1/${multiplier}に する`;
+            return { q: `小数を ${word}と、\n小数点は どちらに 何けた\nうつりますか？\n1: 右に ${digits}けた\n2: 左に ${digits}けた`, a: isMultiply ? "1" : "2", isHissan: false };
+          }
+        }),
         "直方体や立方体の体積": () => generateUnique(() => {
-  const pattern = rand(1, 5);
-
-  if (pattern === 1) {
-    // パターン1: 立方体の体積（基本）
-    const a = rand(2, 9);
-    return { 
-      q: `1辺が ${a}cm の 立方体の\n体積は 何cm³ ですか？`, 
-      a: String(a * a * a), 
-      isHissan: true, 
-      isSolid: true, 
-      solidData: { type: 'cube' } 
-    };
-
-  } else if (pattern === 2) {
-    // パターン2: 直方体の体積（基本）
-    const w = rand(2, 9);
-    const d = rand(2, 9);
-    const h = rand(2, 9);
-    return { 
-      q: `たて ${d}cm、横 ${w}cm、\n高さ ${h}cm の 直方体の\n体積は 何cm³ ですか？`, 
-      a: String(w * d * h), 
-      isHissan: true, 
-      isSolid: true, 
-      solidData: { type: 'cuboid' } 
-    };
-
-  } else if (pattern === 3) {
-    // パターン3: 立方メートル（m³）の単位
-    const w = rand(2, 8);
-    const d = rand(2, 8);
-    const h = rand(2, 8);
-    return { 
-      q: `たて ${d}m、横 ${w}m、\n高さ ${h}m の 直方体の\n体積は 何m³ ですか？`, 
-      a: String(w * d * h), 
-      isHissan: true,
-      isSolid: false // 大きな単位のため図形描画をオフ（必要に応じて変更してください）
-    };
-
-  } else if (pattern === 4) {
-    // パターン4: 体積から高さを求める逆算
-    const w = rand(2, 5);
-    const d = rand(2, 5);
-    const h = rand(2, 9);
-    const volume = w * d * h;
-    return { 
-      q: `たて ${d}cm、横 ${w}cm で、\n体積が ${volume}cm³ の 直方体の\n高さは 何cm ですか？`, 
-      a: String(h), 
-      isHissan: true,
-      isSolid: false
-    };
-
-  } else {
-    // パターン5: 容積（水そうに入る水の体積）
-    const w = rand(1, 5) * 10;
-    const d = rand(1, 5) * 10;
-    const h = rand(1, 4) * 10;
-    return { 
-      q: `うちのりが たて ${d}cm、横 ${w}cm、\n深さ ${h}cm の 水そうに はいる\n水の 体積（容積）は 何cm³ ですか？`, 
-      a: String(w * d * h), 
-      isHissan: true,
-      isSolid: false
-    };
-  }
-}),
+          const pattern = rand(1, 5);
+          if (pattern === 1) {
+            const a = rand(2, 9); return { q: `1辺が ${a}cm の 立方体の\n体積は 何cm³ ですか？`, a: String(a * a * a), isHissan: true, isSolid: true, solidData: { type: 'cube' } };
+          } else if (pattern === 2) {
+            const w = rand(2, 9); const d = rand(2, 9); const h = rand(2, 9);
+            return { q: `たて ${d}cm、横 ${w}cm、\n高さ ${h}cm の 直方体の\n体積は 何cm³ ですか？`, a: String(w * d * h), isHissan: true, isSolid: true, solidData: { type: 'cuboid' } };
+          } else if (pattern === 3) {
+            const w = rand(2, 8); const d = rand(2, 8); const h = rand(2, 8); return { q: `たて ${d}m、横 ${w}m、\n高さ ${h}m の 直方体の\n体積は 何m³ ですか？`, a: String(w * d * h), isHissan: true, isSolid: false };
+          } else if (pattern === 4) {
+            const w = rand(2, 5); const d = rand(2, 5); const h = rand(2, 9); const volume = w * d * h;
+            return { q: `たて ${d}cm、横 ${w}cm で、\n体積が ${volume}cm³ の 直方体の\n高さは 何cm ですか？`, a: String(h), isHissan: true, isSolid: false };
+          } else {
+            const w = rand(1, 5) * 10; const d = rand(1, 5) * 10; const h = rand(1, 4) * 10;
+            return { q: `うちのりが たて ${d}cm、横 ${w}cm、\n深さ ${h}cm の 水そうに はいる\n水の 体積（容積）は 何cm³ ですか？`, a: String(w * d * h), isHissan: true, isSolid: false };
+          }
+        }),
         "比例": () => generateUnique(() => { const x1 = rand(2, 5); const y1 = rand(2, 10) * 10; const x2 = rand(6, 12); const unitPrice = y1 / x1; return { q: `${x1}m で ${y1}円 の リボンが あります。\nこの リボン ${x2}m の \nねだんは 何円 ですか？`, a: String(unitPrice * x2), isHissan: true }; }),
         "小数のかけ算": () => generateUnique(() => { const a = rand(11, 99); const b = rand(11, 99); return { q: `${a/10} × ${b/10} =`, a: String((a*b)/100), isHissan: true }; }),
         "小数のわり算": () => generateUnique(() => { const b = rand(2, 9); const quo = rand(11, 99); const a = b * quo; return { q: `${a/10} ÷ ${b/10} =`, a: String(quo), isHissan: true }; }),
         "図形の角": () => generateUnique(() => {
-  const pattern = rand(1, 5);
-
-  if (pattern === 1) {
-    // パターン1: 三角形の残りの角（基本）
-    const a = rand(30, 80);
-    const b = rand(30, 80);
-    return { 
-      q: `三角形の 2つの角が\n${a}度 と ${b}度 です。\nもう 1つの 角は 何度ですか？`, 
-      a: String(180 - a - b), 
-      isHissan: true 
-    };
-
-  } else if (pattern === 2) {
-    // パターン2: 四角形の残りの角（応用）
-    const a = rand(60, 110);
-    const b = rand(60, 110);
-    const c = rand(60, 110);
-    return { 
-      q: `四角形の 3つの 角が\n${a}度、${b}度、${c}度 です。\nもう 1つの 角は 何度ですか？`, 
-      a: String(360 - a - b - c), 
-      isHissan: true 
-    };
-
-  } else if (pattern === 3) {
-    // パターン3: 多角形の内角の和（知識・発展）
-    const polygons = [
-      { name: "四角形", sum: 360 },
-      { name: "五角形", sum: 540 },
-      { name: "六角形", sum: 720 },
-      { name: "八角形", sum: 1080 }
-    ];
-    const target = polygons[rand(0, polygons.length - 1)];
-    return { 
-      q: `${target.name}の 5つの 角の 大きさの和は\n何度 ですか？`.replace("5つ", target.name === "四角形" ? "4つ" : target.name === "五角形" ? "5つ" : target.name === "六角形" ? "6つ" : "8つ"), 
-      a: String(target.sum), 
-      isHissan: false 
-    };
-
-  } else if (pattern === 4) {
-    // パターン4: 二等辺三角形の底角の計算
-    const top = rand(2, 7) * 10; // 20度 〜 70度
-    return { 
-      q: `1つの 角が ${top}度 の\n二等辺三角形が あります。\n残りの 2つの 角は 同じ 大きさです。\n1つ分は 何度ですか？`, 
-      a: String((180 - top) / 2), 
-      isHissan: true 
-    };
-
-  } else {
-    // パターン5: 正多角形の1つの内角の大きさ
-    const regularPolygons = [
-      { name: "正三角形", angle: 60 },
-      { name: "正方形", angle: 90 },
-      { name: "正五角形", angle: 108 },
-      { name: "正六角形", angle: 120 }
-    ];
-    const target = regularPolygons[rand(0, regularPolygons.length - 1)];
-    return { 
-      q: `${target.name}の 1つの 角の 大きさは\n何度 ですか？`, 
-      a: String(target.angle), 
-      isHissan: false 
-    };
-  }
-}),
+          const pattern = rand(1, 5);
+          if (pattern === 1) {
+            const a = rand(30, 80); const b = rand(30, 80); return { q: `三角形の 2つの角が\n${a}度 と ${b}度 です。\nもう 1つの 角は 何度ですか？`, a: String(180 - a - b), isHissan: true };
+          } else if (pattern === 2) {
+            const a = rand(60, 110); const b = rand(60, 110); const c = rand(60, 110); return { q: `四角形の 3つの 角が\n${a}度、${b}度、${c}度 です。\nもう 1つの 角は 何度ですか？`, a: String(360 - a - b - c), isHissan: true };
+          } else if (pattern === 3) {
+            const polygons = [ { name: "四角形", sum: 360 }, { name: "五角形", sum: 540 }, { name: "六角形", sum: 720 }, { name: "八角形", sum: 1080 } ];
+            const target = polygons[rand(0, polygons.length - 1)];
+            return { q: `${target.name}の 5つの 角の 大きさの和は\n何度 ですか？`.replace("5つ", target.name === "四角形" ? "4つ" : target.name === "五角形" ? "5つ" : target.name === "六角形" ? "6つ" : "8つ"), a: String(target.sum), isHissan: false };
+          } else if (pattern === 4) {
+            const top = rand(2, 7) * 10; return { q: `1つの 角が ${top}度 の\n二等辺三角形が あります。\n残りの 2つの 角は 同じ 大きさです。\n1つ分は 何度ですか？`, a: String((180 - top) / 2), isHissan: true };
+          } else {
+            const regularPolygons = [ { name: "正三角形", angle: 60 }, { name: "正方形", angle: 90 }, { name: "正五角形", angle: 108 }, { name: "正六角形", angle: 120 } ];
+            const target = regularPolygons[rand(0, regularPolygons.length - 1)]; return { q: `${target.name}の 1つの 角の 大きさは\n何度 ですか？`, a: String(target.angle), isHissan: false };
+          }
+        }),
         "偶数と奇数 倍数と約数": () => generateUnique(() => {
-  const type = rand(1, 5);
-  
-  // ※ gcd(a, b) は定義済みの関数としてそのまま使用しています
-
-  if (type === 1) {
-    // パターン1: 偶数・奇数の判定
-    const a = rand(10, 99);
-    return { 
-      q: `${a} は 偶数ですか、\n奇数ですか？\n1: 偶数\n2: 奇数`, 
-      a: a % 2 === 0 ? "1" : "2", 
-      isHissan: false 
-    };
-    
-  } else if (type === 2) {
-    // パターン2: 最小公倍数
-    const a = rand(2, 6);
-    const b = rand(a + 1, 9);
-    const lcm = (a * b) / gcd(a, b);
-    return { 
-      q: `${a} と ${b} の\n最小公倍数は いくつですか？`, 
-      a: String(lcm), 
-      isHissan: false 
-    };
-    
-  } else if (type === 3) {
-    // パターン3: 公倍数の性質（2番目に小さい公倍数）
-    const a = rand(2, 5);
-    const b = rand(a + 1, 7);
-    const lcm = (a * b) / gcd(a, b);
-    return { 
-      q: `${a} と ${b} の 公倍数で、\n小さい方から 数えて 2番目の\n数は いくつですか？`, 
-      a: String(lcm * 2), 
-      isHissan: false 
-    };
-    
-  } else if (type === 4) {
-    // パターン4: 最大公約数
-    const a = rand(2, 5) * rand(2, 4);
-    const b = rand(2, 5) * rand(2, 4);
-    return { 
-      q: `${a} と ${b} の\n最大公約数は いくつですか？`, 
-      a: String(gcd(a, b)), 
-      isHissan: false 
-    };
-    
-  } else {
-    // パターン5: 約数の個数
-    // 少しバリエーションを増やしています
-    const aOptions = [12, 16, 18, 20, 24, 28, 30, 32, 36];
-    const a = aOptions[rand(0, aOptions.length - 1)];
-    let count = 0;
-    for(let i = 1; i <= a; i++) {
-      if(a % i === 0) count++;
-    }
-    return { 
-      q: `${a} の 約数は\n全部で 何こ ありますか？`, 
-      a: String(count), 
-      isHissan: false 
-    };
-  }
-}),
+          const type = rand(1, 5);
+          if (type === 1) {
+            const a = rand(10, 99); return { q: `${a} は 偶数ですか、\n奇数ですか？\n1: 偶数\n2: 奇数`, a: a % 2 === 0 ? "1" : "2", isHissan: false };
+          } else if (type === 2) {
+            const a = rand(2, 6); const b = rand(a + 1, 9); const lcm = (a * b) / gcd(a, b); return { q: `${a} と ${b} の\n最小公倍数は いくつですか？`, a: String(lcm), isHissan: false };
+          } else if (type === 3) {
+            const a = rand(2, 5); const b = rand(a + 1, 7); const lcm = (a * b) / gcd(a, b); return { q: `${a} と ${b} の 公倍数で、\n小さい方から 数えて 2番目の\n数は いくつですか？`, a: String(lcm * 2), isHissan: false };
+          } else if (type === 4) {
+            const a = rand(2, 5) * rand(2, 4); const b = rand(2, 5) * rand(2, 4); return { q: `${a} と ${b} の\n最大公約数は いくつですか？`, a: String(gcd(a, b)), isHissan: false };
+          } else {
+            const aOptions = [12, 16, 18, 20, 24, 28, 30, 32, 36]; const a = aOptions[rand(0, aOptions.length - 1)]; let count = 0; for(let i = 1; i <= a; i++) { if(a % i === 0) count++; }
+            return { q: `${a} の 約数は\n全部で 何こ ありますか？`, a: String(count), isHissan: false };
+          }
+        }),
         "分数と小数 整数の関係": () => generateUnique(() => {
-  const pattern = rand(1, 5);
-
-  if (pattern === 1) {
-    // パターン1: 分数を小数に直す（元のコード）
-    // 割り切れるように分母を限定し、分子は分母より小さい数（真分数）にする
-    const bOptions = [2, 4, 5, 8];
-    const b = bOptions[rand(0, bOptions.length - 1)];
-    let a = rand(1, b - 1); 
-    if (b === 8) a = [1, 3, 5, 7][rand(0, 3)]; // 8の場合は約分済みのものに
-    if (b === 4) a = [1, 3][rand(0, 1)];
-    if (b === 2) a = 1;
-    
-    return { 
-      q: `${a}/${b} を 小数で 表すと\nいくつですか？`, 
-      a: String(a / b), 
-      isHissan: true, 
-      isFractionUnit: true 
-    };
-
-  } else if (pattern === 2) {
-    // パターン2: わり算の商を分数で表す（元のコード）
-    const a = rand(1, 9);
-    const b = rand(2, 9);
-    return { 
-      q: `${a} ÷ ${b} を 分数で 表すと？\n（「分子/分母」の形で 答えよう）`, 
-      a: `${a}/${b}`, 
-      isHissan: false, 
-      isFractionUnit: true 
-    };
-
-  } else if (pattern === 3) {
-    // パターン3: 小数を分数に直す（約分なしの範囲で）
-    // 1学期時点では約分を習っていないため、分母が10で分子が1,3,7,9のものに限定
-    const a = [1, 3, 7, 9][rand(0, 3)];
-    return { 
-      q: `0.${a} を 分数で 表すと？\n（「分子/分母」の形で 答えよう）`, 
-      a: `${a}/10`, 
-      isHissan: false, 
-      isFractionUnit: true 
-    };
-
-  } else if (pattern === 4) {
-    // パターン4: 整数を分数に直す
-    const a = rand(2, 9);
-    return { 
-      q: `整数 ${a} を 分母が 1 の\n分数で 表すと？\n（「分子/分母」の形で 答えよう）`, 
-      a: `${a}/1`, 
-      isHissan: false, 
-      isFractionUnit: true 
-    };
-
-  } else {
-    // パターン5: 分数倍（AはBの何倍か）
-    const a = rand(2, 7);
-    let b = rand(3, 9);
-    // 整数倍にならないように調整
-    while (a === b || b % a === 0 || a % b === 0) { 
-       b = rand(3, 9);
-    }
-    return { 
-      q: `${a}m は ${b}m の\n何倍 ですか？\n（分数で 答えよう）`, 
-      a: `${a}/${b}`, 
-      isHissan: false, 
-      isFractionUnit: true 
-    };
-  }
-}),
+          const pattern = rand(1, 5);
+          if (pattern === 1) {
+            const bOptions = [2, 4, 5, 8]; const b = bOptions[rand(0, bOptions.length - 1)]; let a = rand(1, b - 1); 
+            if (b === 8) a = [1, 3, 5, 7][rand(0, 3)]; if (b === 4) a = [1, 3][rand(0, 1)]; if (b === 2) a = 1;
+            return { q: `${a}/${b} を 小数で 表すと\nいくつですか？`, a: String(a / b), isHissan: true, isFractionUnit: true };
+          } else if (pattern === 2) {
+            const a = rand(1, 9); const b = rand(2, 9); return { q: `${a} ÷ ${b} を 分数で 表すと？\n（「分子/分母」の形で 答えよう）`, a: `${a}/${b}`, isHissan: false, isFractionUnit: true };
+          } else if (pattern === 3) {
+            const a = [1, 3, 7, 9][rand(0, 3)]; return { q: `0.${a} を 分数で 表すと？\n（「分子/分母」の形で 答えよう）`, a: `${a}/10`, isHissan: false, isFractionUnit: true };
+          } else if (pattern === 4) {
+            const a = rand(2, 9); return { q: `整数 ${a} を 分母が 1 の\n分数で 表すと？\n（「分子/分母」の形で 答えよう）`, a: `${a}/1`, isHissan: false, isFractionUnit: true };
+          } else {
+            const a = rand(2, 7); let b = rand(3, 9); while (a === b || b % a === 0 || a % b === 0) { b = rand(3, 9); }
+            return { q: `${a}m は ${b}m の\n何倍 ですか？\n（分数で 答えよう）`, a: `${a}/${b}`, isHissan: false, isFractionUnit: true };
+          }
+        }),
         "分数のたし算とひき算": () => generateUnique(() => { const dens = [ [2,3,6], [2,4,4], [3,4,12], [2,5,10], [3,5,15] ]; const [d1, d2, lcm] = dens[rand(0, dens.length-1)]; const isAdd = rand(0, 1) === 0; let n1 = rand(1, d1-1), n2 = rand(1, d2-1); if (!isAdd && n1*lcm/d1 <= n2*lcm/d2) { n1 = d1 - 1; n2 = 1; } const numAns = isAdd ? n1*(lcm/d1) + n2*(lcm/d2) : n1*(lcm/d1) - n2*(lcm/d2); return { q: `${n1}/${d1} ${isAdd?'+':'-'} ${n2}/${d2} =`, a: simplifyFraction(numAns, lcm), isHissan: true, isFractionUnit: true }; }),
         "平均": () => generateUnique(() => {
-  const pattern = rand(1, 5);
-
-  if (pattern === 1) {
-    // パターン1: 3つの数の平均（基本・元のコードを調整）
-    const a = rand(10, 50);
-    const b = rand(10, 50);
-    const sumBase = a + b + rand(10, 50);
-    const remainder = sumBase % 3;
-    const c = (sumBase - a - b) + (remainder === 0 ? 0 : 3 - remainder);
-    const sum = a + b + c;
-    
-    return { 
-      q: `${a}、${b}、${c} の\n平均は いくつですか？`, 
-      a: String(sum / 3), 
-      isHissan: true 
-    };
-
-  } else if (pattern === 2) {
-    // パターン2: 測定したデータ（4つ）から平均を求める
-    const base = rand(2, 5) * 10;
-    const a = base + rand(-5, 5);
-    const b = base + rand(-5, 5);
-    const c = base + rand(-5, 5);
-    const dBase = base + rand(-5, 5);
-    const sumBase = a + b + c + dBase;
-    const remainder = sumBase % 4;
-    const d = dBase + (remainder === 0 ? 0 : 4 - remainder);
-    const sum = a + b + c + d;
-    
-    return { 
-      q: `4人の 体重は それぞれ\n${a}kg、${b}kg、${c}kg、${d}kg です。\n平均は 何kg ですか？`, 
-      a: String(sum / 4), 
-      isHissan: true 
-    };
-
-  } else if (pattern === 3) {
-    // パターン3: 平均から全体量を求める（逆算）
-    const count = rand(4, 8);
-    const avg = rand(15, 30) * 10;
-    
-    return { 
-      q: `りんご ${count}この 平均の 重さは\n${avg}g です。\n全部の 重さは 何g ですか？`, 
-      a: String(avg * count), 
-      isHissan: true 
-    };
-
-  } else if (pattern === 4) {
-    // パターン4: 0を含むデータの平均（つまずきやすいポイント）
-    const a = rand(10, 40);
-    const b = rand(10, 40);
-    const dBase = rand(10, 40);
-    const sumBase = a + b + 0 + dBase;
-    const remainder = sumBase % 4;
-    const d = dBase + (remainder === 0 ? 0 : 4 - remainder);
-    const sum = a + b + 0 + d;
-    
-    return { 
-      q: `4回の ゲームの 得点は、\n${a}点、${b}点、0点、${d}点 でした。\n1回あたりの 平均は 何点ですか？`, 
-      a: String(sum / 4), 
-      isHissan: true 
-    };
-
-  } else {
-    // パターン5: 日数と平均から全体量を求める応用
-    const avg = rand(10, 25);
-    const days = rand(5, 14);
-    
-    return {
-      q: `${days}日間の 読んだ 本の ページ数の\n平均が 1日 ${avg}ページ でした。\n${days}日間で 全部で 何ページ 読みましたか？`,
-      a: String(avg * days),
-      isHissan: true
-    };
-  }
-}),
+          const pattern = rand(1, 5);
+          if (pattern === 1) {
+            const a = rand(10, 50); const b = rand(10, 50); const sumBase = a + b + rand(10, 50); const remainder = sumBase % 3; const c = (sumBase - a - b) + (remainder === 0 ? 0 : 3 - remainder); const sum = a + b + c;
+            return { q: `${a}、${b}、${c} の\n平均は いくつですか？`, a: String(sum / 3), isHissan: true };
+          } else if (pattern === 2) {
+            const base = rand(2, 5) * 10; const a = base + rand(-5, 5); const b = base + rand(-5, 5); const c = base + rand(-5, 5); const dBase = base + rand(-5, 5); const sumBase = a + b + c + dBase; const remainder = sumBase % 4; const d = dBase + (remainder === 0 ? 0 : 4 - remainder); const sum = a + b + c + d;
+            return { q: `4人の 体重は それぞれ\n${a}kg、${b}kg、${c}kg、${d}kg です。\n平均は 何kg ですか？`, a: String(sum / 4), isHissan: true };
+          } else if (pattern === 3) {
+            const count = rand(4, 8); const avg = rand(15, 30) * 10; return { q: `りんご ${count}この 平均の 重さは\n${avg}g です。\n全部の 重さは 何g ですか？`, a: String(avg * count), isHissan: true };
+          } else if (pattern === 4) {
+            const a = rand(10, 40); const b = rand(10, 40); const dBase = rand(10, 40); const sumBase = a + b + 0 + dBase; const remainder = sumBase % 4; const d = dBase + (remainder === 0 ? 0 : 4 - remainder); const sum = a + b + 0 + d;
+            return { q: `4回の ゲームの 得点は、\n${a}点、${b}点、0点、${d}点 でした。\n1回あたりの 平均は 何点ですか？`, a: String(sum / 4), isHissan: true };
+          } else {
+            const avg = rand(10, 25); const days = rand(5, 14); return { q: `${days}日間の 読んだ 本の ページ数の\n平均が 1日 ${avg}ページ でした。\n${days}日間で 全部で 何ページ 読みましたか？`, a: String(avg * days), isHissan: true };
+          }
+        }),
         "単位量あたりの大きさ": () => generateUnique(() => {
-  const pattern = rand(1, 5);
-  
-  if (pattern === 1) {
-    // パターン1: 人数 ÷ 面積（人口密度の考え方）
-    const area = rand(2, 9) * 10;
-    const people = area * rand(2, 5);
-    return { 
-      q: `${area}m² の へやに ${people}人 います。\n1m² あたり 何人 ですか？`, 
-      a: String(people / area), 
-      isHissan: true 
-    };
-    
-  } else if (pattern === 2) {
-    // パターン2: 道のり ÷ ガソリン（燃費の考え方）
-    const L = rand(2, 9) * 10;
-    const km = L * rand(10, 20);
-    return { 
-      q: `${L}L の ガソリンで ${km}km 走る 車が あります。\n1L で 何km 走りますか？`, 
-      a: String(km / L), 
-      isHissan: true 
-    };
-    
-  } else if (pattern === 3) {
-    // パターン3: 代金 ÷ 長さ（1mあたりの単価）
-    const m = rand(2, 9);
-    const yen = m * rand(5, 15) * 10;
-    return { 
-      q: `${m}m の リボンを 買うと ${yen}円 でした。\n1m あたり 何円 ですか？`, 
-      a: String(yen / m), 
-      isHissan: true 
-    };
-    
-  } else if (pattern === 4) {
-    // パターン4: 収穫量 ÷ 面積（1m²あたりのとれ高）
-    const area = rand(2, 8) * 5;
-    const kg = area * rand(3, 8);
-    return { 
-      q: `${area}m² の 畑で ${kg}kg の じゃがいもが とれました。\n1m² あたり 何kg とれましたか？`, 
-      a: String(kg / area), 
-      isHissan: true 
-    };
-    
-  } else {
-    // パターン5: 重さ ÷ 個数（1つあたりの重さ）
-    const count = rand(5, 12);
-    const weight = count * rand(10, 30);
-    return { 
-      q: `同じ 大きさの 辞書が ${count}さつ あり、重さをはかると 全部で ${weight}g でした。\n1さつ あたり 何g ですか？`, 
-      a: String(weight / count), 
-      isHissan: true 
-    };
-  }
-}),
+          const pattern = rand(1, 5);
+          if (pattern === 1) {
+            const area = rand(2, 9) * 10; const people = area * rand(2, 5); return { q: `${area}m² の へやに ${people}人 います。\n1m² あたり 何人 ですか？`, a: String(people / area), isHissan: true };
+          } else if (pattern === 2) {
+            const L = rand(2, 9) * 10; const km = L * rand(10, 20); return { q: `${L}L の ガソリンで ${km}km 走る 車が あります。\n1L で 何km 走りますか？`, a: String(km / L), isHissan: true };
+          } else if (pattern === 3) {
+            const m = rand(2, 9); const yen = m * rand(5, 15) * 10; return { q: `${m}m の リボンを 買うと ${yen}円 でした。\n1m あたり 何円 ですか？`, a: String(yen / m), isHissan: true };
+          } else if (pattern === 4) {
+            const area = rand(2, 8) * 5; const kg = area * rand(3, 8); return { q: `${area}m² の 畑で ${kg}kg の じゃがいもが とれました。\n1m² あたり 何kg とれましたか？`, a: String(kg / area), isHissan: true };
+          } else {
+            const count = rand(5, 12); const weight = count * rand(10, 30); return { q: `同じ 大きさの 辞書が ${count}さつ あり、重さをはかると 全部で ${weight}g でした。\n1さつ あたり 何g ですか？`, a: String(weight / count), isHissan: true };
+          }
+        }),
         "四角形と三角形の面積": () => generateUnique(() => { const type = rand(1, 3); if (type === 1) { const base = rand(2, 10); const h = rand(2, 10); return { q: `底辺が ${base}cm、高さが ${h}cm の\n三角形の 面積は 何cm²？`, a: String((base * h) / 2), isHissan: true }; } else if (type === 2) { const base = rand(2, 10); const h = rand(2, 10); return { q: `底辺が ${base}cm、高さが ${h}cm の\n平行四辺形の 面積は 何cm²？`, a: String(base * h), isHissan: true }; } else { const a = rand(2, 8); const b = rand(2, 8); const h = rand(2, 10); return { q: `上底が ${a}cm、下底が ${b}cm、\n高さが ${h}cm の\n台形の 面積は 何cm²？`, a: String((a + b) * h / 2), isHissan: true }; } }),
         "割合": () => generateUnique(() => {
-  const type = rand(1, 5);
-  
-  if (type === 1) {
-    // パターン1: 割合（小数）を求める
-    const base = rand(2, 10) * 10;
-    const comp = base * rand(1, 9) / 10;
-    return { 
-      q: `${base}人 を もとにしたときの\n${comp}人 の 割合は いくつですか？\n(小数でこたえよう)`, 
-      a: String(comp / base), 
-      isHissan: true 
-    };
-    
-  } else if (type === 2) {
-    // パターン2: 百分率（%）を求める（具体的な場面）
-    const base = rand(2, 10) * 10;
-    const comp = base * rand(1, 9) / 10;
-    return { 
-      q: `定員 ${base}人 の バスに\n${comp}人 乗っています。\n乗っている人の 割合は 何% ですか？`, 
-      a: String((comp / base) * 100), 
-      isHissan: true 
-    };
-    
-  } else if (type === 3) {
-    // パターン3: 比較量を求める（百分率から）
-    const base = rand(1, 5) * 1000;
-    const per = rand(1, 9) * 10;
-    return { 
-      q: `${base}円 の ${per}% は\n何円 ですか？`, 
-      a: String(base * (per / 100)), 
-      isHissan: true 
-    };
-    
-  } else if (type === 4) {
-    // パターン4: 割引の問題（百分率の適用）
-    const base = rand(2, 8) * 500;
-    const discount = rand(1, 4) * 10; // 10%, 20%, 30%, 40%
-    return { 
-      q: `${base}円 の 品物を\n${discount}% 引きで 買いました。\n代金は 何円 ですか？`, 
-      a: String(base * (1 - discount / 100)), 
-      isHissan: true 
-    };
-    
-  } else {
-    // パターン5: 歩合（割）を使った問題
-    const base = rand(1, 5) * 1000;
-    const wari = rand(1, 9);
-    return { 
-      q: `${base}円 の ${wari}割 は\n何円 ですか？`, 
-      a: String(base * (wari / 10)), 
-      isHissan: true 
-    };
-  }
-}),
+          const type = rand(1, 5);
+          if (type === 1) {
+            const base = rand(2, 10) * 10; const comp = base * rand(1, 9) / 10; return { q: `${base}人 を もとにしたときの\n${comp}人 の 割合は いくつですか？\n(小数でこたえよう)`, a: String(comp / base), isHissan: true };
+          } else if (type === 2) {
+            const base = rand(2, 10) * 10; const comp = base * rand(1, 9) / 10; return { q: `定員 ${base}人 の バスに\n${comp}人 乗っています。\n乗っている人の 割合は 何% ですか？`, a: String((comp / base) * 100), isHissan: true };
+          } else if (type === 3) {
+            const base = rand(1, 5) * 1000; const per = rand(1, 9) * 10; return { q: `${base}円 の ${per}% は\n何円 ですか？`, a: String(base * (per / 100)), isHissan: true };
+          } else if (type === 4) {
+            const base = rand(2, 8) * 500; const discount = rand(1, 4) * 10; return { q: `${base}円 の 品物を\n${discount}% 引きで 買いました。\n代金は 何円 ですか？`, a: String(base * (1 - discount / 100)), isHissan: true };
+          } else {
+            const base = rand(1, 5) * 1000; const wari = rand(1, 9); return { q: `${base}円 の ${wari}割 は\n何円 ですか？`, a: String(base * (wari / 10)), isHissan: true };
+          }
+        }),
         "正多角形と円周の長さ": () => generateUnique(() => { if (rand(1, 2) === 1) { const d = rand(2, 10); return { q: `直径が ${d}cm の 円の\n円周の 長さは 何cm ですか？\n(円周率は 3.14)`, a: String(Math.round(d * 3.14 * 100)/100), isHissan: true }; } else { const r = rand(2, 5); return { q: `半径が ${r}cm の 円の\n円周の 長さは 何cm ですか？\n(円周率は 3.14)`, a: String(Math.round(r * 2 * 3.14 * 100)/100), isHissan: true }; } }),
         "角柱と円柱": () => generateUnique(() => { const type = rand(1, 3); if (type === 1) { const n = rand(3, 6); const shapes = ["", "", "", "三角形", "四角形", "五角形", "六角形"]; const names = ["", "", "", "三角柱", "四角柱", "五角柱", "六角柱"]; return { q: `底面が ${shapes[n]} の\n角柱の なまえは？\n1: ${names[n]}\n2: 円柱`, a: "1", isHissan: false }; } else if (type === 2) { const n = rand(3, 5); return { q: `${n === 3 ? "三角柱" : n === 4 ? "四角柱" : "五角柱"}の 側面の 数は\nいくつ ですか？`, a: String(n), isHissan: false }; } else { return { q: `底面が 円 の\n柱の なまえは？\n1: 円柱\n2: 球`, a: "1", isHissan: false }; } })
       },
@@ -1389,60 +547,19 @@
           else { const n = rand(3, 6); const names = ["", "", "", "正三角形", "正方形", "正五角形", "正六角形"]; return { q: `${names[n]} の\n対称の軸は 何本 ありますか。`, a: String(n), isSymmetry: true, symmetryData: { type: 'polygon', sides: n }, isHissan: false }; }
         }),
         "文字と式": () => generateUnique(() => {
-  const pattern = rand(1, 5);
-
-  if (pattern === 1) {
-    // パターン1: xに数値を代入してyを求める（基本・元のコード）
-    const a = rand(2, 9);
-    const x = rand(2, 9);
-    return { 
-      q: `x × ${a} ＝ y という 式が あります。\nx が ${x} のとき、y は いくつですか？`, 
-      a: String(x * a), 
-      isHissan: false 
-    };
-
-  } else if (pattern === 2) {
-    // パターン2: yがわかっているときにxを求める（逆算）
-    const a = rand(2, 9);
-    const x = rand(2, 9);
-    const y = x * a;
-    return { 
-      q: `x × ${a} ＝ y という 式が あります。\ny が ${y} のとき、x は いくつですか？`, 
-      a: String(x), 
-      isHissan: false 
-    };
-
-  } else if (pattern === 3) {
-    // パターン3: 文章題から正しい式を選ぶ（式の立式）
-    const a = rand(3, 9) * 10;
-    return { 
-      q: `1こ x 円の ケーキを 4こ 買って、\n${a}円の 箱に 入れてもらいました。\n全部の 代金を y 円とするとき、\n正しい 式は どれですか？\n1: x ＋ 4 ＋ ${a} ＝ y\n2: x × 4 ＋ ${a} ＝ y`, 
-      a: "2", 
-      isHissan: false 
-    };
-
-  } else if (pattern === 4) {
-    // パターン4: たし算の式での代入
-    const a = rand(10, 50);
-    const x = rand(20, 80);
-    return { 
-      q: `${a} ＋ x ＝ y という 式が あります。\nx が ${x} のとき、y は いくつですか？`, 
-      a: String(a + x), 
-      isHissan: false 
-    };
-
-  } else {
-    // パターン5: 図形の面積公式と文字の式（発展）
-    const a = rand(4, 9);
-    const x = rand(3, 8);
-    const y = a * x;
-    return { 
-      q: `たてが x cm、横が ${a}cm の\n長方形の 面積を y cm² とします。\n面積 y が ${y} のとき、\nたての 長さ x は 何cm ですか？`, 
-      a: String(x), 
-      isHissan: false 
-    };
-  }
-}),       
+          const pattern = rand(1, 5);
+          if (pattern === 1) {
+            const a = rand(2, 9); const x = rand(2, 9); return { q: `x × ${a} ＝ y という 式が あります。\nx が ${x} のとき、y は いくつですか？`, a: String(x * a), isHissan: false };
+          } else if (pattern === 2) {
+            const a = rand(2, 9); const x = rand(2, 9); const y = x * a; return { q: `x × ${a} ＝ y という 式が あります。\ny が ${y} のとき、x は いくつですか？`, a: String(x), isHissan: false };
+          } else if (pattern === 3) {
+            const a = rand(3, 9) * 10; return { q: `1こ x 円の ケーキを 4こ 買って、\n${a}円の 箱に 入れてもらいました。\n全部の 代金を y 円とするとき、\n正しい 式は どれですか？\n1: x ＋ 4 ＋ ${a} ＝ y\n2: x × 4 ＋ ${a} ＝ y`, a: "2", isHissan: false };
+          } else if (pattern === 4) {
+            const a = rand(10, 50); const x = rand(20, 80); return { q: `${a} ＋ x ＝ y という 式が あります。\nx が ${x} のとき、y は いくつですか？`, a: String(a + x), isHissan: false };
+          } else {
+            const a = rand(4, 9); const x = rand(3, 8); const y = a * x; return { q: `たてが x cm、横が ${a}cm の\n長方形の 面積を y cm² とします。\n面積 y が ${y} のとき、\nたての 長さ x は 何cm ですか？`, a: String(x), isHissan: false };
+          }
+        }),        
         "分数×整数、分数÷整数、分数×分数": () => generateUnique(() => {
           const type = rand(1, 3);
           if (type === 1) { const den = rand(3, 9); const num = rand(1, den - 1); const int = rand(2, 5); return { q: `${num}/${den} × ${int} =`, a: simplifyFraction(num * int, den), isHissan: false, isFractionUnit: true }; } 
@@ -1460,63 +577,24 @@
           else { const a = rand(2, 5); const b = rand(2, 5); const m = rand(2, 4); if (a === b) return { q: `4 : 6 を 一番 かんたんな\n整数の比にすると 2 : x です。\nx は？`, a: "3", isHissan: false, isFractionUnit: true }; return { q: `${a * m} : ${b * m} を 一番 かんたんな\n整数の比にすると ${a} : x です。\nx は？`, a: String(b), isHissan: false, isFractionUnit: true }; }
         }),
         "拡大図と縮図": () => generateUnique(() => {
-  const pattern = rand(1, 5);
-
-  if (pattern === 1) {
-    // パターン1: 実際の長さから縮図上の長さを求める（元のコード）
-    const scale = rand(1, 5) * 100;
-    const realM = (scale / 100) * rand(2, 6);
-    return {
-      q: `実際の 長さが ${realM}m のものを、\n縮尺 1/${scale} の 縮図に 描くと、\n長さは 何cm になりますか？`,
-      a: String((realM * 100) / scale),
-      isHissan: true
-    };
-
-  } else if (pattern === 2) {
-    // パターン2: 縮図上の長さから実際の長さを求める（単位変換あり）
-    const scale = [100, 200, 500, 1000][rand(0, 3)];
-    const mapCm = rand(2, 8);
-    // cm を m に直すため 100 で割る
-    const realM = (mapCm * scale) / 100;
-    return {
-      q: `縮尺 1/${scale} の 縮図で、\n長さが ${mapCm}cm の 直線は、\n実際の 長さは 何m ですか？`,
-      a: String(realM),
-      isHissan: true
-    };
-
-  } else if (pattern === 3) {
-    // パターン3: 実際の長さと縮図の長さから縮尺を求める
-    const scaleOptions = [100, 200, 500, 1000];
-    const scale = scaleOptions[rand(0, 3)];
-    const cm = rand(2, 5);
-    const m = (cm * scale) / 100;
-    return {
-      q: `実際の 長さが ${m}m のものを\n${cm}cm に 縮めて 描きました。\nこの 縮図の 縮尺は 1/いくつ ですか？\n（分母の 数字だけを 答えよう）`,
-      a: String(scale),
-      isHissan: true
-    };
-
-  } else if (pattern === 4) {
-    // パターン4: 角の大きさは拡大・縮小しても変わらない性質
-    const angle = rand(4, 12) * 10;
-    const times = rand(2, 4);
-    return {
-      q: `ある 三角形の ${times}倍の 拡大図を 描きます。\nもとの 三角形の 1つの 角が ${angle}度 のとき、\n拡大図の 対応する 角の 大きさは 何度 ですか？`,
-      a: String(angle),
-      isHissan: false
-    };
-
-  } else {
-    // パターン5: 拡大図の対応する辺の長さ
-    const cm = rand(3, 8);
-    const times = rand(2, 5);
-    return {
-      q: `辺の 長さが ${cm}cm の 四角形が あります。\nこの 四角形の ${times}倍の 拡大図を 描くと、\n対応する 辺の 長さは 何cm に なりますか？`,
-      a: String(cm * times),
-      isHissan: false
-    };
-  }
-}),
+          const pattern = rand(1, 5);
+          if (pattern === 1) {
+            const scale = rand(1, 5) * 100; const realM = (scale / 100) * rand(2, 6);
+            return { q: `実際の 長さが ${realM}m のものを、\n縮尺 1/${scale} の 縮図に 描くと、\n長さは 何cm になりますか？`, a: String((realM * 100) / scale), isHissan: true };
+          } else if (pattern === 2) {
+            const scale = [100, 200, 500, 1000][rand(0, 3)]; const mapCm = rand(2, 8); const realM = (mapCm * scale) / 100;
+            return { q: `縮尺 1/${scale} の 縮図で、\n長さが ${mapCm}cm の 直線は、\n実際の 長さは 何m ですか？`, a: String(realM), isHissan: true };
+          } else if (pattern === 3) {
+            const scaleOptions = [100, 200, 500, 1000]; const scale = scaleOptions[rand(0, 3)]; const cm = rand(2, 5); const m = (cm * scale) / 100;
+            return { q: `実際の 長さが ${m}m のものを\n${cm}cm に 縮めて 描きました。\nこの 縮図の 縮尺は 1/いくつ ですか？\n（分母の 数字だけを 答えよう）`, a: String(scale), isHissan: true };
+          } else if (pattern === 4) {
+            const angle = rand(4, 12) * 10; const times = rand(2, 4);
+            return { q: `ある 三角形の ${times}倍の 拡大図を 描きます。\nもとの 三角形の 1つの 角が ${angle}度 のとき、\n拡大図の 対応する 角の 大きさは 何度 ですか？`, a: String(angle), isHissan: false };
+          } else {
+            const cm = rand(3, 8); const times = rand(2, 5);
+            return { q: `辺の 長さが ${cm}cm の 四角形が あります。\nこの 四角形の ${times}倍の 拡大図を 描くと、\n対応する 辺の 長さは 何cm に なりますか？`, a: String(cm * times), isHissan: false };
+          }
+        }),
         "円の面積": () => generateUnique(() => {
           const r = rand(2, 5);
           return { q: `半径 ${r}cm の 円の 面積は\n何cm² ですか。(円周率 3.14)`, a: String(Math.round(r * r * 3.14 * 100) / 100), isHissan: true };
@@ -1526,62 +604,24 @@
           return { q: `底面積が ${s}cm²、高さが ${h}cm の\n角柱の 体積は 何cm³ ですか。`, a: String(s * h), isHissan: true };
         }),
         "およその面積と体積": () => generateUnique(() => {
-  const pattern = rand(1, 5);
-
-  if (pattern === 1) {
-    // パターン1: 長方形とみなす面積（元のコードを調整）
-    const w = rand(5, 10) * 10;
-    const h = rand(5, 10) * 10;
-    return { 
-      q: `ある 森の 形を、\nだいたい たて${h}m、横${w}m の\n長方形と みなすと、\nおよその 面積は 何m² ですか？`, 
-      a: String(w * h), 
-      isHissan: true 
-    };
-
-  } else if (pattern === 2) {
-    // パターン2: 三角形とみなす面積
-    const b = rand(4, 9) * 10;
-    const h = rand(4, 9) * 10;
-    return { 
-      q: `ある 島の 形を、\n底辺${b}km、高さ${h}km の\n三角形と みなすと、\nおよその 面積は 何km² ですか？`, 
-      a: String((b * h) / 2), 
-      isHissan: true 
-    };
-
-  } else if (pattern === 3) {
-    // パターン3: 円とみなす面積
-    const r = rand(2, 5) * 10;
-    // 小数点の計算誤差を防ぐため、314をかけて100で割る処理にしています
-    const area = (r * r * 314) / 100;
-    return { 
-      q: `ある 湖の 形を、\n半径${r}m の 円と みなすと、\nおよその 面積は 何m² ですか？\n（円周率は 3.14 とします）`, 
-      a: String(area), 
-      isHissan: true 
-    };
-
-  } else if (pattern === 4) {
-    // パターン4: 直方体とみなす体積
-    const w = rand(2, 5) * 10;
-    const d = rand(2, 5) * 10;
-    const h = rand(3, 8) * 10;
-    return { 
-      q: `ある 大きな ビルを、\nたて${d}m、横${w}m、高さ${h}m の\n直方体と みなすと、\nおよその 体積は 何m³ ですか？`, 
-      a: String(w * d * h), 
-      isHissan: true 
-    };
-
-  } else {
-    // パターン5: 円柱とみなす体積
-    const r = rand(2, 5);
-    const h = rand(5, 10);
-    const volume = (r * r * h * 314) / 100;
-    return { 
-      q: `大きな 丸太（まるた）を、\n底面の 半径${r}m、長さ${h}m の\n円柱と みなすと、\nおよその 体積は 何m³ ですか？\n（円周率は 3.14 とします）`, 
-      a: String(volume), 
-      isHissan: true 
-    };
-  }
-}),        
+          const pattern = rand(1, 5);
+          if (pattern === 1) {
+            const w = rand(5, 10) * 10; const h = rand(5, 10) * 10;
+            return { q: `ある 森の 形を、\nだいたい たて${h}m、横${w}m の\n長方形と みなすと、\nおよその 面積は 何m² ですか？`, a: String(w * h), isHissan: true };
+          } else if (pattern === 2) {
+            const b = rand(4, 9) * 10; const h = rand(4, 9) * 10;
+            return { q: `ある 島の 形を、\n底辺${b}km、高さ${h}km の\n三角形と みなすと、\nおよその 面積は 何km² ですか？`, a: String((b * h) / 2), isHissan: true };
+          } else if (pattern === 3) {
+            const r = rand(2, 5) * 10; const area = (r * r * 314) / 100;
+            return { q: `ある 湖の 形を、\n半径${r}m の 円と みなすと、\nおよその 面積は 何m² ですか？\n（円周率は 3.14 とします）`, a: String(area), isHissan: true };
+          } else if (pattern === 4) {
+            const w = rand(2, 5) * 10; const d = rand(2, 5) * 10; const h = rand(3, 8) * 10;
+            return { q: `ある 大きな ビルを、\nたて${d}m、横${w}m、高さ${h}m の\n直方体と みなすと、\nおよその 体積は 何m³ ですか？`, a: String(w * d * h), isHissan: true };
+          } else {
+            const r = rand(2, 5); const h = rand(5, 10); const volume = (r * r * h * 314) / 100;
+            return { q: `大きな 丸太（まるた）を、\n底面の 半径${r}m、長さ${h}m の\n円柱と みなすと、\nおよその 体積は 何m³ ですか？\n（円周率は 3.14 とします）`, a: String(volume), isHissan: true };
+          }
+        }),        
         "比例と反比例": () => generateUnique(() => {
           const a = rand(2, 5), x1 = rand(2, 3), y1 = a * x1, x2 = rand(4, 6);
           return { q: `y は x に 比例しています。\nx が ${x1} のとき y は ${y1} です。\nx が ${x2} のとき、y はいくつですか。`, a: String(a * x2), isHissan: true };
@@ -1839,6 +879,98 @@
       );
     };
 
+    // --- ここから新しく追加した図の描画プログラム ---
+    const ScaleFigure = ({ data }) => {
+      if (!data) return null;
+      const angle = (data.g / 2000) * 360;
+      const ticks = [];
+      for (let i = 0; i < 20; i++) {
+        const a = (i * 18 - 90) * (Math.PI / 180);
+        const isMajor = i % 2 === 0;
+        const r1 = 95, r2 = isMajor ? 80 : 85;
+        const x1 = 100 + r1 * Math.cos(a), y1 = 100 + r1 * Math.sin(a);
+        const x2 = 100 + r2 * Math.cos(a), y2 = 100 + r2 * Math.sin(a);
+        ticks.push(<line key={`tick${i}`} x1={x1} y1={y1} x2={x2} y2={y2} stroke="#333" strokeWidth={isMajor ? 2 : 1} />);
+        
+        if (isMajor) {
+          const rText = 60;
+          const tx = 100 + rText * Math.cos(a), ty = 100 + rText * Math.sin(a) + 4;
+          let label = "";
+          if (i === 0) label = "0";
+          else if (i === 10) label = "1kg";
+          else label = (i % 10) * 100 + "g";
+          ticks.push(<text key={`label${i}`} x={tx} y={ty} fontSize="12" textAnchor="middle" fill="#333">{label}</text>);
+        }
+      }
+
+      return (
+        <svg viewBox="0 0 200 200" className="w-auto h-32 sm:h-48 mb-2 drop-shadow-md shrink-0 bg-white rounded-full border border-gray-200">
+          <circle cx="100" cy="100" r="95" fill="none" stroke="#66ccff" strokeWidth="4" />
+          {ticks}
+          <line x1="100" y1="100" x2="100" y2="25" stroke="red" strokeWidth="4" transform={`rotate(${angle} 100 100)`} />
+          <circle cx="100" cy="100" r="5" fill="#333" />
+        </svg>
+      );
+    };
+
+    const RulerFigure = ({ data }) => {
+      if (!data) return null;
+      const ticks = [];
+      for (let i = 0; i <= 80; i++) {
+        const x = 20 + i * 3;
+        let tickHeight = 5;
+        if (i % 10 === 0) tickHeight = 15;
+        else if (i % 5 === 0) tickHeight = 10;
+        ticks.push(<line key={`rtick${i}`} x1={x} y1="60" x2={x} y2={60 + tickHeight} stroke="#333" strokeWidth="1" />);
+        if (i % 10 === 0) {
+          const label = i / 10;
+          ticks.push(<text key={`rlabel${i}`} x={x} y="92" fontSize="14" textAnchor="middle" fill="#333">{label}</text>);
+        }
+      }
+      const lineEndX = 20 + data.cm * 30 + data.mm * 3;
+
+      return (
+        <svg viewBox="0 0 300 100" className="w-full max-w-[400px] h-auto max-h-[100px] sm:max-h-[120px] mb-2 drop-shadow-sm shrink-0 bg-white rounded-md border border-gray-200">
+          <line x1="20" y1="60" x2="280" y2="60" stroke="#333" strokeWidth="1" />
+          {ticks}
+          <line x1="20" y1="40" x2={lineEndX} y2="40" stroke="#5D9CEC" strokeWidth="6" strokeLinecap="butt" />
+          <line x1="20" y1="35" x2="20" y2="45" stroke="#5D9CEC" strokeWidth="2" />
+          <line x1={lineEndX} y1="35" x2={lineEndX} y2="45" stroke="#5D9CEC" strokeWidth="2" />
+        </svg>
+      );
+    };
+
+    const VolumeFigure = ({ data }) => {
+      if (!data) return null;
+      const beakersL = Array.from({ length: data.L }).map((_, i) => (
+        <g key={`L${i}`} transform={`translate(${10 + i * 50}, 20)`}>
+          <path d="M 5 0 L 5 60 A 5 5 0 0 0 10 65 L 35 65 A 5 5 0 0 0 40 60 L 40 0" fill="rgba(100,149,237,0.3)" stroke="#3D405B" strokeWidth="2" strokeLinejoin="round"/>
+          <line x1="5" y1="20" x2="15" y2="20" stroke="#3D405B" strokeWidth="1" />
+          <line x1="5" y1="40" x2="15" y2="40" stroke="#3D405B" strokeWidth="1" />
+          <text x="22.5" y="45" fontSize="12" textAnchor="middle" fill="#3D405B" fontWeight="bold">1L</text>
+        </g>
+      ));
+      
+      const beakersDL = Array.from({ length: data.dL }).map((_, i) => {
+        const row = Math.floor(i / 5);
+        const col = i % 5;
+        return (
+          <g key={`dL${i}`} transform={`translate(${10 + data.L * 50 + col * 30}, ${35 + row * 40})`}>
+            <path d="M 3 0 L 3 30 A 3 3 0 0 0 6 33 L 19 33 A 3 3 0 0 0 22 30 L 22 0" fill="rgba(100,149,237,0.5)" stroke="#3D405B" strokeWidth="1.5" strokeLinejoin="round"/>
+            <text x="12.5" y="22" fontSize="8" textAnchor="middle" fill="#3D405B" fontWeight="bold">1dL</text>
+          </g>
+        );
+      });
+
+      return (
+        <svg viewBox="0 0 350 120" className="w-full max-w-[400px] h-auto max-h-[100px] sm:max-h-[120px] mb-2 drop-shadow-sm shrink-0 bg-white rounded-md border border-gray-200">
+          {beakersL}
+          {beakersDL}
+        </svg>
+      );
+    };
+    // --- ここまで ---
+
     const GradeBox = ({ grade, onClick }) => {
       const pinColors = ['', 'pin-blue', 'pin-yellow', 'pin-green', '', 'pin-blue'];
       const pinClass = pinColors[grade - 1] || '';
@@ -1972,7 +1104,7 @@
         const cur = questions[currentIndex];
         if (!cur) return;
         let ok = false, ansStr = '', err = '';
-        const norm = (s) => (s || '').replace(/[０-９]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0)).replace(/[．。、，,]/g, '.').replace(/\s+/g, '');
+        const norm = (s) => (s || '').replace(/[０-９]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0)).replace(/[．。、，,]/g, '.').replace(/：/g, ':').replace(/\s+/g, '');
         
         if (inputMode === 'fraction') {
           if (!fractionInput.num && !fractionInput.den) return;
@@ -2102,6 +1234,12 @@
               {cur && cur.isPieGraph && <PieGraph data={cur.graphData} />}
               {cur && cur.isBandGraph && <BandGraph data={cur.graphData} />}
               {cur && cur.isSymmetry && <SymmetryFigure data={cur.symmetryData} />}
+              
+              {/* 新しく追加した図形のコンポーネント */}
+              {cur && cur.isScale && <ScaleFigure data={cur.scaleData} />}
+              {cur && cur.isRuler && <RulerFigure data={cur.rulerData} />}
+              {cur && cur.isVolume && <VolumeFigure data={cur.volumeData} />}
+
               <p className="text-xl sm:text-2xl lg:text-3xl font-kyokasho text-bluegrey tracking-wider whitespace-pre-wrap leading-snug mt-auto mb-auto px-1 w-full">
                 {cur ? formatMathText(cur.q) : ''}
               </p>
