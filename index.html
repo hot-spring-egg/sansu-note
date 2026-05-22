@@ -93,6 +93,21 @@
 
     const GENERATORS = {
       1: {
+        // 新規追加: いくつといくつ (数の合成・分解)
+        "いくつといくつ": () => generateUnique(() => {
+          const type = rand(1, 2);
+          if (type === 1) {
+            // 合成: a と b でいくつ？
+            const a = rand(1, 9);
+            const b = rand(1, 10 - a);
+            return { q: `${a} と ${b} で\nいくつ？`, a: String(a + b), isHissan: false };
+          } else {
+            // 分解: c は a といくつ？
+            const c = rand(2, 10);
+            const a = rand(1, c - 1);
+            return { q: `${c} は\n${a} と いくつ？`, a: String(c - a), isHissan: false };
+          }
+        }),
         "あわせていくつ ふえるといくつ": () => generateUnique(() => { const a = rand(1, 9); const b = rand(1, 10 - a); return { q: `${a} + ${b} =`, a: String(a+b), isHissan: false }; }),
         "のこりはいくつ ちがいはいくつ": () => generateUnique(() => { const a = rand(2, 10); const b = rand(1, a - 1); return { q: `${a} - ${b} =`, a: String(a-b), isHissan: false }; }),
         "10よりおおきいかず": () => generateUnique(() => { if (rand(1, 2) === 1) { const b = rand(1, 9); return { q: `10 と ${b} で いくつ？`, a: String(10+b), isHissan: false }; } else { const ans = rand(11, 19); return { q: `${ans} は\n10 と いくつ？`, a: String(ans-10), isHissan: false }; } }),
@@ -521,7 +536,7 @@
             const base = rand(2, 10) * 10; const comp = base * rand(1, 9) / 10; return { q: `定員 ${base}人 の バスに\n${comp}人 乗っています。\n乗っている人の 割合は 何% ですか？`, a: String((comp / base) * 100), isHissan: true };
           } else if (type === 3) {
             const base = rand(1, 5) * 1000; const per = rand(1, 9) * 10; return { q: `${base}円 の ${per}% は\n何円 ですか？`, a: String(base * (per / 100)), isHissan: true };
-          } else if (type === 4) {
+          } else if (pattern === 4) {
             const base = rand(2, 8) * 500; const discount = rand(1, 4) * 10; return { q: `${base}円 の 品物を\n${discount}% 引きで 買いました。\n代金は 何円 ですか？`, a: String(base * (1 - discount / 100)), isHissan: true };
           } else {
             const base = rand(1, 5) * 1000; const wari = rand(1, 9); return { q: `${base}円 の ${wari}割 は\n何円 ですか？`, a: String(base * (wari / 10)), isHissan: true };
@@ -903,11 +918,10 @@
       );
     };
 
-    // --- 修正箇所：定規の目盛りとテープをピッタリ合わせ、テープを太くしました ---
     const RulerFigure = ({ data }) => {
       if (!data) return null;
       const ticks = [];
-      const startX = 30; // 定規の左端の余白
+      const startX = 30;
       
       for (let i = 0; i <= 80; i++) {
         const x = startX + i * 3;
@@ -915,10 +929,8 @@
         if (i % 10 === 0) tickHeight = 20;
         else if (i % 5 === 0) tickHeight = 14;
         
-        // 目盛りを y=45 から下へ向かって描画
         ticks.push(<line key={`rtick${i}`} x1={x} y1="45" x2={x} y2={45 + tickHeight} stroke="#333" strokeWidth="1" />);
         
-        // 1cmごとに数字をつける
         if (i % 10 === 0) {
           const label = i / 10;
           ticks.push(<text key={`rlabel${i}`} x={x} y="82" fontSize="16" textAnchor="middle" fill="#333" fontWeight="bold">{label}</text>);
@@ -929,17 +941,10 @@
 
       return (
         <svg viewBox="0 0 300 100" className="w-full max-w-[400px] h-auto max-h-[100px] sm:max-h-[120px] mb-2 drop-shadow-sm shrink-0 bg-white rounded-md border border-gray-200">
-          {/* 定規の上端（横線） */}
           <line x1={startX} y1="45" x2={startX + 240} y2="45" stroke="#333" strokeWidth="1.5" />
-          
           {ticks}
-          
-          {/* 左端の補助点線（テープから目盛りへ） */}
           <line x1={startX} y1="20" x2={startX} y2="45" stroke="#94a3b8" strokeWidth="2" strokeDasharray="3,2" />
-          {/* 右端の補助点線（赤い点線で注目しやすく） */}
           <line x1={lineEndX} y1="20" x2={lineEndX} y2="45" stroke="#E07A5F" strokeWidth="2" strokeDasharray="3,2" />
-
-          {/* 青いテープ（太さを14にアップし、定規のすぐ上に配置） */}
           <line x1={startX} y1="28" x2={lineEndX} y2="28" stroke="#5D9CEC" strokeWidth="14" strokeLinecap="butt" />
         </svg>
       );
